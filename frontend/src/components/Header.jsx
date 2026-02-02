@@ -55,22 +55,40 @@ export default function Header({ view, setView, onTrashClick, onAddClick }) {
             </span>
           </div>
 
-          <div className="icon-profile" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <i className="fa-solid fa-user-circle fa-lg"></i>
-            <i
-  className="fa-solid fa-plus"
-  style={{ color: '#16a34a', cursor: 'pointer' }}
-  title="Agregar"
-  onClick={onAddClick}
-/>
+          <div
+  className="icon-profile"
+  style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
+>
+  {/* PERFIL -> abre nueva vista */}
+  <i
+    className="fa-solid fa-user-circle fa-lg"
+    title="Perfil"
+    onClick={() => setView('perfil')}
+  ></i>
 
-            <i
-              className="fa-solid fa-trash"
-              style={{ color: '#b91c1c', cursor: 'pointer' }}
-              title="Papelera"
-              onClick={onTrashClick}
-            ></i>
-          </div>
+  {/* AGREGAR -> se mantiene igual, pero sin activar el perfil */}
+  <i
+    className="fa-solid fa-plus"
+    style={{ color: '#16a34a', cursor: 'pointer' }}
+    title="Agregar"
+    onClick={(e) => {
+      e.stopPropagation()
+      onAddClick?.()
+    }}
+  ></i>
+
+  {/* PAPELERA -> se mantiene igual, pero sin activar el perfil */}
+  <i
+    className="fa-solid fa-trash"
+    style={{ color: '#b91c1c', cursor: 'pointer' }}
+    title="Papelera"
+    onClick={(e) => {
+      e.stopPropagation()
+      onTrashClick?.()
+    }}
+  ></i>
+</div>
+
         </div>
       </div>
     </header>

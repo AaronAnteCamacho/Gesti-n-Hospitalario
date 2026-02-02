@@ -61,3 +61,30 @@ th{font-weight:700;color:var(--muted)}
 .actions-row{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:12px}
 .icon-btn{background:transparent;border:1px solid transparent;padding:8px;border-radius:8px;cursor:pointer}
 .icon-btn:hover{border-color:var(--border);background:rgba(15,23,42,0.02)}
+
+.pill{
+  display:inline-block;
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:12px;
+  opacity:.9;
+  border:1px solid rgba(255,255,255,.15);
+}
+
+.table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+.table th, .table td{
+  padding:10px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.icon-btn{
+  background:transparent;
+  border:1px solid rgba(255,255,255,.15);
+  padding:6px 10px;
+  border-radius:10px;
+  cursor:pointer;
+}

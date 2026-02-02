@@ -8,6 +8,7 @@ import InventarioView from './views/InventarioView.jsx'
 import BitacoraView from './views/BitacoraView.jsx'
 import FormularioView from './views/FormularioView.jsx'
 import LoginView from './views/LoginView.jsx'
+import PerfilUsuariosView from "./views/PerfilUsuariosView";
 
 
 function isoDate() {
@@ -20,6 +21,7 @@ export default function App() {
   const [inventario, setInventario] = useLocalStorageState('inventario', [])
   const [bitacoras, setBitacoras] = useLocalStorageState('bitacoras', [])
   const [formularios, setFormularios] = useLocalStorageState('formularios', [])
+
 
   const [pendientes, setPendientes] = useLocalStorageState('pendientes', [])
   const [terminados, setTerminados] = useLocalStorageState('terminados', [])
@@ -138,6 +140,25 @@ if (!auth) {
     ))
   }
 
+  function deleteInventario(item) {
+  const key = item?.id_equipo || item?.id || item?.numero_inventario || item?.inv
+  if (!key) return
+
+  setInventario((prev) =>
+    prev.filter((x) => (x?.id_equipo || x?.id || x?.numero_inventario || x?.inv) !== key)
+  )
+  alert('Inventario eliminado.')
+}
+
+function deleteInventarioMany(keys) {
+  const setKeys = new Set(keys || [])
+  setInventario((prev) =>
+    prev.filter((x) => !setKeys.has(x?.id_equipo || x?.id || x?.numero_inventario || x?.inv))
+  )
+  alert('Inventarios eliminados.')
+}
+
+
   function downloadInventario(item) {
     const tipo = (prompt('¿Descargar como PDF o Excel? (pdf / excel)') || '').toLowerCase()
     if (tipo === 'pdf') {
@@ -220,18 +241,31 @@ if (!auth) {
     }
   }
 
-  const content = useMemo(() => {
-    if (view === 'home') {
-      return <HomeView inventario={inventario} bitacoras={bitacoras} onGoForm={() => setView('formulario')} onUpsertInventario={upsertInventario} />
-    }
-    if (view === 'inventario') {
-      return <InventarioView inventario={inventario} onOpenDetail={openInventarioDetail} onDownload={downloadInventario} onUpsert={upsertInventario} />
-    }
-    if (view === 'bitacora') {
-      return <BitacoraView bitacoras={bitacoras} onNew={createNewBitacora} onOpen={openBitacoraDetail} onDownload={downloadBitacora} />
-    }
-    return <FormularioView pendientes={pendientes} setPendientes={setPendientes} terminados={terminados} setTerminados={setTerminados} />
-  }, [view, inventario, bitacoras, pendientes, terminados])
+ const content = useMemo(() => {
+  if (view === 'home') {
+    return <HomeView inventario={inventario} bitacoras={bitacoras} onGoForm={() => setView('formulario')} onUpsertInventario={upsertInventario} />
+  }
+if (view === 'inventario') {
+  return (
+    <InventarioView
+      inventario={inventario}
+      onOpenDetail={openInventarioDetail}
+      onDownload={downloadInventario}
+      onUpsert={upsertInventario}
+      onDelete={deleteInventario}
+      onDeleteMany={deleteInventarioMany}
+    />
+  )
+
+  }
+  if (view === 'bitacora') {
+    return <BitacoraView bitacoras={bitacoras} onNew={createNewBitacora} onOpen={openBitacoraDetail} onDownload={downloadBitacora} />
+  }
+  if (view === 'perfil') {
+    return <PerfilUsuariosView />
+  }
+  return <FormularioView pendientes={pendientes} setPendientes={setPendientes} terminados={terminados} setTerminados={setTerminados} />
+}, [view, inventario, bitacoras, pendientes, terminados])
 
   return (
     <>
