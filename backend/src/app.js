@@ -1,9 +1,6 @@
 import express from "express";
 import cors from "cors";
 
-import express from "express";
-import cors from "cors";
-
 import authRoutes from "./routes/auth.routes.js";
 import equiposRoutes from "./routes/equipos.routes.js"
 
@@ -20,3 +17,17 @@ app.use("/api/auth", authRoutes);
 app.use("/api/equipos", equiposRoutes);
 
 export default app;
+
+
+import { getPool } from "./config/db.js";
+
+app.get("/api/db-ping", async (req, res) => {
+  try {
+    const pool = await getPool();
+    const r = await pool.request().query("SELECT DB_NAME() AS db, @@SERVERNAME AS server");
+    res.json({ ok: true, info: r.recordset[0] });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok: false, error: String(e.message || e) });
+  }
+});

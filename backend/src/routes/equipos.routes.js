@@ -5,17 +5,16 @@ import { requireAuth, allowRoles } from "../middlewares/auth.js";
 const router = Router();
 
 /**
- * IMPORTANTE:
- * - administrador: todo
- * - almacen: CRUD inventario
- * - mantenimiento: solo lectura (si quieres)
+ * ROLES (solo 2):
+ * - jefe: CRUD completo
+ * - empleado: solo lectura (GET)
  */
 
-// GET /api/equipos
+// GET /api/equipos  (jefe y empleado)
 router.get(
   "/",
   requireAuth,
-  allowRoles("administrador", "almacen", "mantenimiento"),
+  allowRoles("jefe", "empleado"),
   async (req, res) => {
     try {
       const pool = await getPool();
@@ -39,11 +38,11 @@ router.get(
   }
 );
 
-// POST /api/equipos
+// POST /api/equipos  (solo jefe)
 router.post(
   "/",
   requireAuth,
-  allowRoles("administrador", "almacen"),
+  allowRoles("jefe"),
   async (req, res) => {
     try {
       const {
@@ -86,17 +85,16 @@ router.post(
       return res.json({ ok: true, id_equipo: result.recordset[0].id_equipo });
     } catch (e) {
       console.error(e);
-      // por si cae por UNIQUE numero_inventario
       return res.status(500).json({ ok: false, message: "Error creando equipo" });
     }
   }
 );
 
-// PUT /api/equipos/:id
+// PUT /api/equipos/:id  (solo jefe)
 router.put(
   "/:id",
   requireAuth,
-  allowRoles("administrador", "almacen"),
+  allowRoles("jefe"),
   async (req, res) => {
     try {
       const id = Number(req.params.id);
@@ -151,11 +149,11 @@ router.put(
   }
 );
 
-// DELETE /api/equipos/:id
+// DELETE /api/equipos/:id  (solo jefe)
 router.delete(
   "/:id",
   requireAuth,
-  allowRoles("administrador", "almacen"),
+  allowRoles("jefe"),
   async (req, res) => {
     try {
       const id = Number(req.params.id);

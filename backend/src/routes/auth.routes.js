@@ -29,18 +29,20 @@ router.post("/login", async (req, res) => {
       `);
 
     const user = result.recordset?.[0];
+
     if (!user) return res.status(401).json({ ok: false, message: "Credenciales inválidas" });
     if (!user.activo) return res.status(403).json({ ok: false, message: "Usuario inactivo" });
 
     const okPass = await bcrypt.compare(password, user.password_hash);
     if (!okPass) return res.status(401).json({ ok: false, message: "Credenciales inválidas" });
 
+    // Roles válidos en tu sistema: "jefe" | "empleado"
     const payload = {
       id_usuario: user.id_usuario,
       nombre: user.nombre,
       correo: user.correo,
       id_rol: user.id_rol,
-      rol: user.nombre_rol, // administrador | mantenimiento | almacen
+      rol: user.nombre_rol, // jefe | empleado
     };
 
     const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "8h" });
