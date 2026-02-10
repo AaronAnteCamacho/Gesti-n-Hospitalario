@@ -9,6 +9,8 @@ import BitacoraView from './views/BitacoraView.jsx'
 import FormularioView from './views/FormularioView.jsx'
 import LoginView from './views/LoginView.jsx'
 import PerfilUsuariosView from "./views/PerfilUsuariosView";
+import { apiFetch } from "./services/api.js";
+
 
 
 function isoDate() {
@@ -18,18 +20,48 @@ function isoDate() {
 export default function App() {
   const [view, setView] = useState('home')
 
-  const [inventario, setInventario] = useLocalStorageState('inventario', [])
+  const [inventario, setInventario] = React.useState([]);
   const [bitacoras, setBitacoras] = useLocalStorageState('bitacoras', [])
   const [formularios, setFormularios] = useLocalStorageState('formularios', [])
 
 
   const [pendientes, setPendientes] = useLocalStorageState('pendientes', [])
   const [terminados, setTerminados] = useLocalStorageState('terminados', [])
-  const [auth, setAuth] = React.useState( JSON.parse(localStorage.getItem('auth')))
+  const [auth, setAuth] = React.useState(() => {
+  return JSON.parse(localStorage.getItem('auth') || "null");
+});
+
+
 
 if (!auth) {
-  return <LoginView onLogin={() => setAuth(JSON.parse(localStorage.getItem('auth')))} />
+  return <LoginView onLogin={() => setAuth(JSON.parse(localStorage.getItem('auth') || "null"))} />
 }
+async function loadInventario() {
+  const r = await apiFetch("/api/equipos");
+
+  const mapped = (r.data || []).map((x) => ({
+    id_equipo: x.id_equipo,
+    numero_inventario: x.numero_inventario,
+    nombre: x.nombre_equipo,
+    marca: x.marca,
+    modelo: x.modelo,
+    numero_serie: x.numero_serie,
+    ubicacion_especifica: x.ubicacion_especifica,
+    id_categoria: x.id_categoria,
+    categoria: x.nombre_categoria,
+    id_area: x.id_area,
+    area: x.nombre_area,
+    estatus: x.activo ? "Activo" : "Inactivo",
+    activo: x.activo,
+  }));
+
+  setInventario(mapped);
+}
+
+React.useEffect(() => {
+  if (!auth?.token) return; // si no hay login, no hace nada
+  loadInventario().catch((e) => alert(e.message));
+}, [auth?.token]);
 
   // Demo seed
   React.useEffect(() => {
