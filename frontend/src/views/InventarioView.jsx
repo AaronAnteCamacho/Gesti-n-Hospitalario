@@ -4,38 +4,65 @@ function getItemKey(it) {
   return it?.id_equipo || it?.id || it?.numero_inventario || it?.inv
 }
 
+// ✅ Normaliza: ignora acentos y mayúsculas
+function norm(s) {
+  return String(s || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+}
+
+// ✅ TU CATÁLOGO REAL (según tu captura)
+const AREAS_DB = [
+  'Medicina interna',
+  'Diálisis',
+  'Cirugía',
+  'Neonatología',
+  'Admisión hospitalaria',
+  'Quirófano',
+  'Pediatría',
+  'Urgencias pediátricas',
+  'Urgencias adulto',
+  'Terapia intensiva adulto',
+  'Terapia intensiva pediátrica',
+  'Inhaloterapia',
+  'Consulta externa',
+  'Imagenologia',
+  'Central de enfermeras',
+  'Biomedica',
+  'Estomatologia',
+  'Aislado',
+  'Sin especificar',
+]
+
 export default function InventarioView({
   inventario,
   onOpenDetail,
   onDownload,
   onUpsert,
-  onDelete,       // ✅ nuevo (lo agregamos en App.jsx)
-  onDeleteMany,   // ✅ nuevo (lo agregamos en App.jsx)
+  onDelete,
+  onDeleteMany,
 }) {
   const [filterText, setFilterText] = useState('')
-  const [filterArea, setFilterArea] = useState('')
-  const [selected, setSelected] = useState([]) // keys seleccionados
+  const [filterArea, setFilterArea] = useState('') // ✅ "" = todas
+  const [selected, setSelected] = useState([])
 
+  // ✅ FILTRO robusto
   const list = useMemo(() => {
-    const t = filterText.toLowerCase().trim()
+    const t = norm(filterText)
+
     return (inventario || []).filter((it) => {
-      const hayArea = !filterArea || (it.area || '') === filterArea
-      const hayText =
+      // si el usuario eligió área, comparamos normalizado
+      const okArea = !filterArea || norm(it.area) === norm(filterArea)
+
+      const okText =
         !t ||
-        (`${it.nombre || ''} ${it.marca || ''} ${it.numero_inventario || it.inv || ''}`
-          .toLowerCase()
-          .includes(t))
-      return hayArea && hayText
+        norm(`${it.nombre || ''} ${it.marca || ''} ${it.numero_inventario || ''}`).includes(t)
+
+      return okArea && okText
     })
   }, [inventario, filterText, filterArea])
-
-  const areas = useMemo(() => {
-    const set = new Set()
-    ;(inventario || []).forEach((it) => {
-      if (it.area) set.add(it.area)
-    })
-    return Array.from(set)
-  }, [inventario])
 
   function toggleSelect(it) {
     const key = getItemKey(it)
@@ -44,8 +71,7 @@ export default function InventarioView({
   }
 
   function selectAllVisible() {
-    const keys = list.map(getItemKey).filter(Boolean)
-    setSelected(keys)
+    setSelected(list.map(getItemKey).filter(Boolean))
   }
 
   function clearSelection() {
@@ -54,8 +80,6 @@ export default function InventarioView({
 
   function downloadAllInventario() {
     const tipo = (prompt('¿Descargar TODO como PDF o Excel? (pdf / excel)') || '').toLowerCase()
-
-    // Descargar TODO el inventario (no solo filtrado)
     const data = inventario || []
 
     if (tipo === 'pdf') {
@@ -65,18 +89,17 @@ export default function InventarioView({
         <table border="1" style="border-collapse:collapse;width:100%">
           <thead>
             <tr>
-              <th>Inv</th><th>Equipo</th><th>Marca</th><th>Modelo</th><th>Área</th><th>Estado</th>
+              <th>Inv</th><th>Equipo</th><th>Marca</th><th>Área</th><th>Estado</th>
             </tr>
           </thead>
           <tbody>
             ${data.map(it => `
               <tr>
-                <td>${it.numero_inventario || it.inv || it.id || ''}</td>
-                <td>${it.nombre || it.equipo || ''}</td>
+                <td>${it.numero_inventario || ''}</td>
+                <td>${it.nombre || ''}</td>
                 <td>${it.marca || ''}</td>
-                <td>${it.modelo || ''}</td>
                 <td>${it.area || ''}</td>
-                <td>${it.estatus || it.estado || ''}</td>
+                <td>${it.activo ? 'Activado' : 'Desactivado'}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -90,14 +113,13 @@ export default function InventarioView({
 
     if (tipo === 'excel') {
       const rows = [
-        ['Inv', 'Equipo', 'Marca', 'Modelo', 'Área', 'Estado'],
+        ['Inv', 'Equipo', 'Marca', 'Área', 'Estado'],
         ...data.map((it) => [
-          it.numero_inventario || it.inv || it.id || '',
-          it.nombre || it.equipo || '',
+          it.numero_inventario || '',
+          it.nombre || '',
           it.marca || '',
-          it.modelo || '',
           it.area || '',
-          it.estatus || it.estado || '',
+          it.activo ? 'Activado' : 'Desactivado',
         ]),
       ]
       const csv = rows
@@ -131,11 +153,10 @@ export default function InventarioView({
   }
 
   function handleDeleteOne(it) {
-    if (!confirm(`¿Eliminar inventario ${it.numero_inventario || it.inv || it.id}?`)) return
+    if (!confirm(`¿Eliminar inventario ${it.numero_inventario || it.id_equipo}?`)) return
 
     if (typeof onDelete === 'function') {
       onDelete(it)
-      // si borras uno que estaba seleccionado, lo quito del array
       const k = getItemKey(it)
       setSelected((prev) => prev.filter((x) => x !== k))
       return
@@ -146,15 +167,11 @@ export default function InventarioView({
 
   return (
     <section className="card">
-      {/* TÍTULO + AGREGAR */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2 style={{ margin: 0 }}>Inventario</h2>
-        <div>
-          <button className="btn" onClick={() => onUpsert(null)}>Agregar</button>
-        </div>
+        <button className="btn" onClick={() => onUpsert(null)}>Agregar</button>
       </div>
 
-      {/* BUSCAR / FILTRAR + BOTONES */}
       <div style={{ marginTop: 12 }} className="card">
         <label>Buscar / filtrar</label>
 
@@ -162,28 +179,25 @@ export default function InventarioView({
           <input
             value={filterText}
             onChange={(e) => setFilterText(e.target.value)}
-            placeholder="Nombre, marca o número de inventario"
+            placeholder="Nombre, marca o número"
           />
 
+          {/* ✅ SIEMPRE TODAS LAS ÁREAS */}
           <select value={filterArea} onChange={(e) => setFilterArea(e.target.value)}>
             <option value="">Área (todas)</option>
-            {areas.map((a) => (
+            {AREAS_DB.map((a) => (
               <option key={a} value={a}>{a}</option>
             ))}
           </select>
 
-          {/* ✅ APLICAR + DESCARGAR TODO (pegados, como pediste) */}
-          <button className="btn" onClick={() => { /* filtros en vivo */ }}>
-            Aplicar
-          </button>
+          <button className="btn" onClick={() => {}}>Aplicar</button>
 
-          <button className="btn" onClick={downloadAllInventario} title="Descargar TODO el inventario">
+          <button className="btn" onClick={downloadAllInventario}>
             <i className="fa-solid fa-download" style={{ marginRight: 8 }}></i>
             Descargar todo
           </button>
 
-          {/* ✅ donde “estaba descargar” (acciones) -> botón ELIMINAR (seleccionados) */}
-          <button className="btn ghost" onClick={handleDeleteSelected} disabled={!selected.length} title="Eliminar seleccionados">
+          <button className="btn ghost" onClick={handleDeleteSelected} disabled={!selected.length}>
             <i className="fa-solid fa-trash" style={{ marginRight: 8 }}></i>
             Eliminar
           </button>
@@ -197,7 +211,6 @@ export default function InventarioView({
         </div>
       </div>
 
-      {/* TABLA */}
       <div style={{ marginTop: 12 }} className="card">
         <table>
           <thead>
@@ -227,13 +240,12 @@ export default function InventarioView({
                     />
                   </td>
 
-                  <td>{it.numero_inventario || it.inv || it.id}</td>
-                  <td>{it.nombre || it.equipo}</td>
+                  <td>{it.numero_inventario || '—'}</td>
+                  <td>{it.nombre || '—'}</td>
                   <td>{it.marca || '—'}</td>
                   <td>{it.area || '—'}</td>
-                  <td>{it.estatus || it.estado || '—'}</td>
+                  <td>{it.activo ? 'Activado' : 'Desactivado'}</td>
 
-                  {/* ✅ ICONOS: descargar / abrir / editar / borrar */}
                   <td style={{ textAlign: 'right', display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                     <button className="icon-btn" title="Descargar" onClick={() => onDownload(it)}>
                       <i className="fa-solid fa-download"></i>
