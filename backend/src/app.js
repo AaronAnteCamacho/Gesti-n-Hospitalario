@@ -3,6 +3,7 @@ import cors from "cors";
 
 import authRoutes from "./routes/auth.routes.js";
 import equiposRoutes from "./routes/equipos.routes.js"
+import bitacorasRoutes from "./routes/bitacoras.routes.js";
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/equipos", equiposRoutes);
+app.use("/api/bitacoras", bitacorasRoutes);
 
 export default app;
 
