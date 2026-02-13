@@ -3,7 +3,8 @@ import logoLeft from '../assets/logo_left.png'
 import logoRight from '../assets/logo_right.png'
 
 
-export default function Header({ view, setView, onTrashClick, onAddClick }) {
+export default function Header({ view, setView, auth, onTrashClick, onAddClick }) {
+  const isJefe = auth?.rol === 'jefe'
   const NavBtn = ({ id, label }) => (
     <button
       className={'nav-btn' + (view === id ? ' active' : '')}
@@ -56,38 +57,42 @@ export default function Header({ view, setView, onTrashClick, onAddClick }) {
           </div>
 
           <div
-  className="icon-profile"
-  style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
->
-  {/* PERFIL -> abre nueva vista */}
-  <i
-    className="fa-solid fa-user-circle fa-lg"
-    title="Perfil"
-    onClick={() => setView('perfil')}
-  ></i>
+            className="icon-profile"
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
+          >
+            {/* USUARIOS (solo jefe) */}
+            {isJefe && (
+              <i
+                className="fa-solid fa-users fa-lg"
+                title="Usuarios"
+                onClick={() => setView('perfil')}
+              ></i>
+            )}
 
-  {/* AGREGAR -> se mantiene igual, pero sin activar el perfil */}
-  <i
-    className="fa-solid fa-plus"
-    style={{ color: '#16a34a', cursor: 'pointer' }}
-    title="Agregar"
-    onClick={(e) => {
-      e.stopPropagation()
-      onAddClick?.()
-    }}
-  ></i>
+            {/* AGREGAR */}
+            {isJefe && (
+              <i
+                className="fa-solid fa-plus"
+                style={{ color: '#16a34a', cursor: 'pointer' }}
+                title="Agregar"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onAddClick?.()
+                }}
+              ></i>
+            )}
 
-  {/* PAPELERA -> se mantiene igual, pero sin activar el perfil */}
-  <i
-    className="fa-solid fa-trash"
-    style={{ color: '#b91c1c', cursor: 'pointer' }}
-    title="Papelera"
-    onClick={(e) => {
-      e.stopPropagation()
-      onTrashClick?.()
-    }}
-  ></i>
-</div>
+            {/* PAPELERA */}
+            <i
+              className="fa-solid fa-trash-can fa-lg"
+              style={{ color: '#b91c1c', cursor: 'pointer' }}
+              title="Papelera"
+              onClick={(e) => {
+                e.stopPropagation()
+                onTrashClick?.()
+              }}
+            ></i>
+          </div>
 
         </div>
       </div>

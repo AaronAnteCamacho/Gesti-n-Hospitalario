@@ -24,3 +24,4 @@ export function allowRoles(...rolesPermitidos) {
     next();
   };
 }
+

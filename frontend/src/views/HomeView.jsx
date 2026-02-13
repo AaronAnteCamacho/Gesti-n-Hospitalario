@@ -1,119 +1,108 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState } from "react";
 
-export default function HomeView({ inventario, bitacoras, onGoForm, onUpsertInventario }) {
-  const [searchId, setSearchId] = useState('')
-  const [areaFilter, setAreaFilter] = useState('')
+function norm(s) {
+  return String(s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
 
-  const recent = useMemo(() => inventario.slice(0, 5), [inventario])
+/**
+ * HomeView
+ * - Búsqueda rápida por NÚMERO DE INVENTARIO, NOMBRE o NÚMERO DE SERIE.
+ * - Si NO existe: botón para agregarlo a la BD y luego reportar falla.
+ * - Si existe: botón para reportar falla (esto lo manda a Bitácoras y también a Pendientes).
+ */
+export default function HomeView({
+  inventario,
+  bitacoras,
+  onGoForm,
+  onReportFalla,
+  onQuickCreate,
+}) {
+  const [q, setQ] = useState("");
 
   const found = useMemo(() => {
-    const q = searchId.trim()
-    if (!q) return null
-    return inventario.find((i) => String(i.numero_inventario || i.inv || i.id || '') === q) || null
-  }, [inventario, searchId])
+    const s = norm(q);
+    if (!s) return null;
+    return (
+      (inventario || []).find((it) => norm(it.numero_inventario) === s) ||
+      (inventario || []).find((it) => norm(it.numero_serie) === s) ||
+      (inventario || []).find((it) => norm(it.nombre_equipo).includes(s)) ||
+      null
+    );
+  }, [inventario, q]);
 
   return (
     <section className="card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h2 style={{ margin: 0 }}>Inicio</h2>
-          <div className="muted">Usa el número de inventario para buscar, editar o crear un registro rápidamente.</div>
-        </div>
-        <div className="kpi">
-          <div className="box chip">Inventarios: <span>{inventario.length}</span></div>
-          <div className="box chip">Bitácoras: <span>{bitacoras.length}</span></div>
-        </div>
+      <h2 style={{ marginTop: 0 }}>Inicio</h2>
+      <div className="small muted" style={{ marginBottom: 10 }}>
+        Búsqueda rápida: escribe el <strong>NÚMERO DE INVENTARIO</strong>, <strong>NOMBRE</strong> o <strong>NÚMERO DE SERIE</strong>.
       </div>
 
-      <hr style={{ margin: '14px 0', border: 'none', borderTop: '1px solid var(--border)' }} />
+      <div className="row" style={{ gap: 10, alignItems: "center" }}>
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Inventario, nombre o serie (ej. 203965 / CAMA / 01N14001001)"
+          style={{ flex: 1 }}
+        />
 
-      <div className="grid grid-2">
-        <div>
-          <div className="card" style={{ marginBottom: 12 }}>
-            <label htmlFor="searchId">Buscar por número de inventario</label>
-            <div className="search-row">
-              <input
-                type="text"
-                id="searchId"
-                placeholder="Ej: 192571"
-                value={searchId}
-                onChange={(e) => setSearchId(e.target.value)}
-              />
+        <button className="nav-btn" onClick={() => setQ("")}> 
+          Limpiar
+        </button>
+      </div>
+
+      <div style={{ marginTop: 12 }}>
+        {q.trim() && !found ? (
+          <div className="card">
+            <div style={{ fontWeight: 700 }}>No se encontró el registro.</div>
+            <div className="small muted" style={{ marginTop: 6 }}>
+              Puedes agregar el equipo al inventario y enseguida registrar la falla en bitácora.
+            </div>
+            <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
               <button
                 className="btn"
-                onClick={() => {
-                  if (!searchId.trim()) alert('Ingresa un número de inventario')
-                }}
+                onClick={() => onQuickCreate?.(q.trim())}
               >
-                Buscar
+                Agregar equipo + Registrar falla
               </button>
-              <button className="nav-btn" onClick={() => setSearchId('')}>Limpiar</button>
-            </div>
-
-            <div style={{ marginTop: 12 }}>
-              {!searchId.trim() ? null : found ? (
-                <div className="card">
-                  <strong>{found.nombre || found.equipo || 'Equipo'}</strong>
-                  <div className="small muted">
-                    Marca: {found.marca || '—'} · Área: {found.area || '—'}
-                  </div>
-                  <div style={{ marginTop: 8 }}>
-                    <button className="btn" onClick={() => onUpsertInventario(found)}>Editar</button>
-                  </div>
-                </div>
-              ) : (
-                <div className="card">
-                  <div className="small muted">
-                    No existe un registro con número <strong>{searchId.trim()}</strong>.
-                  </div>
-                  <div style={{ marginTop: 8 }}>
-                    <button className="btn" onClick={() => onUpsertInventario({ numero_inventario: searchId.trim() })}>
-                      Crear
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
+        ) : null}
 
+        {found ? (
           <div className="card">
-            <h3 style={{ marginTop: 0 }}>Acciones rápidas</h3>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button className="btn" onClick={() => onUpsertInventario(null)}>Agregar inventario</button>
-              <button className="btn" onClick={() => alert('En React: agrega desde la vista Bitácora (demo).')}>Agregar bitácora</button>
-              <button className="nav-btn" onClick={onGoForm}>Crear orden de servicio</button>
-            </div>
-          </div>
-        </div>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
+              <div>
+                <div style={{ fontWeight: 800 }}>
+                  {found.nombre_equipo || "Equipo"}
+                </div>
+                <div className="small muted">
+                  Inv: <strong>{found.numero_inventario || "—"}</strong> · Serie: <strong>{found.numero_serie || "—"}</strong>
+                </div>
+                <div className="small muted" style={{ marginTop: 6 }}>
+                  Área: {found.nombre_area || found.id_area || "—"} · Categoría: {found.nombre_categoria || found.id_categoria || "—"}
+                </div>
+              </div>
 
-        <aside>
-          <div className="card">
-            <h4 style={{ margin: '0 0 8px 0' }}>Filtrar por área</h4>
-            <select value={areaFilter} onChange={(e) => setAreaFilter(e.target.value)}>
-              <option value="">— Todas —</option>
-              <option>Neonatología</option>
-              <option>Medicina interna</option>
-              <option>Diálisis</option>
-              <option>Cirugía</option>
-              <option>Quirófano</option>
-              <option>Pediatría</option>
-              <option>Urgencias adulto</option>
-              <option>Terapia intensiva adulto</option>
-              <option>Imagenología</option>
-              <option>Consulta externa</option>
-            </select>
-            <div style={{ marginTop: 12 }}>
-              <h5 className="small">Últimos inventarios agregados</h5>
-              <div className="small muted" style={{ marginTop: 6 }}>
-                {(areaFilter ? inventario.filter(i => (i.area||'')===areaFilter) : recent)
-                  .slice(0,5)
-                  .map((i) => `${i.numero_inventario || i.inv || i.id} · ${i.nombre || i.equipo || ''}`)
-                  .join('\n') || '—'}
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button className="btn" onClick={() => onReportFalla?.(found)}>
+                  Reportar falla
+                </button>
+                <button className="nav-btn" onClick={onGoForm}>
+                  Ir a formularios
+                </button>
               </div>
             </div>
           </div>
-        </aside>
+        ) : null}
+      </div>
+
+      <div style={{ marginTop: 14 }} className="small muted">
+        Bitácoras registradas: <strong>{(bitacoras || []).length}</strong>
       </div>
     </section>
-  )
+  );
 }

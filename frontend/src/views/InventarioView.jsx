@@ -1,276 +1,219 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState } from "react";
 
-function getItemKey(it) {
-  return it?.id_equipo || it?.id || it?.numero_inventario || it?.inv
-}
-
-// ✅ Normaliza: ignora acentos y mayúsculas
 function norm(s) {
-  return String(s || '')
+  return String(s || "")
     .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
 }
-
-// ✅ TU CATÁLOGO REAL (según tu captura)
-const AREAS_DB = [
-  'Medicina interna',
-  'Diálisis',
-  'Cirugía',
-  'Neonatología',
-  'Admisión hospitalaria',
-  'Quirófano',
-  'Pediatría',
-  'Urgencias pediátricas',
-  'Urgencias adulto',
-  'Terapia intensiva adulto',
-  'Terapia intensiva pediátrica',
-  'Inhaloterapia',
-  'Consulta externa',
-  'Imagenologia',
-  'Central de enfermeras',
-  'Biomedica',
-  'Estomatologia',
-  'Aislado',
-  'Sin especificar',
-]
 
 export default function InventarioView({
+  auth,
   inventario,
-  onOpenDetail,
-  onDownload,
-  onUpsert,
-  onDelete,
-  onDeleteMany,
+  areas,
+  categorias,
+  onAdd,
+  onEdit,
+  onTrash,
+  onReportFalla,
 }) {
-  const [filterText, setFilterText] = useState('')
-  const [filterArea, setFilterArea] = useState('') // ✅ "" = todas
-  const [selected, setSelected] = useState([])
+  const [filterText, setFilterText] = useState("");
+  const [filterArea, setFilterArea] = useState("");
+  const [filterCategoria, setFilterCategoria] = useState("");
 
-  // ✅ FILTRO robusto
   const list = useMemo(() => {
-    const t = norm(filterText)
-
+    const t = norm(filterText);
     return (inventario || []).filter((it) => {
-      // si el usuario eligió área, comparamos normalizado
-      const okArea = !filterArea || norm(it.area) === norm(filterArea)
-
+      const okArea = !filterArea || String(it.id_area) === String(filterArea);
+      const okCat = !filterCategoria || String(it.id_categoria) === String(filterCategoria);
       const okText =
         !t ||
-        norm(`${it.nombre || ''} ${it.marca || ''} ${it.numero_inventario || ''}`).includes(t)
-
-      return okArea && okText
-    })
-  }, [inventario, filterText, filterArea])
-
-  function toggleSelect(it) {
-    const key = getItemKey(it)
-    if (!key) return
-    setSelected((prev) => (prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key]))
-  }
-
-  function selectAllVisible() {
-    setSelected(list.map(getItemKey).filter(Boolean))
-  }
-
-  function clearSelection() {
-    setSelected([])
-  }
+        norm(
+          `${it.numero_inventario || ""} ${it.nombre_equipo || ""} ${it.marca || ""} ${it.modelo || ""} ${it.numero_serie || ""} ${it.ubicacion_especifica || ""}`
+        ).includes(t);
+      return okArea && okCat && okText;
+    });
+  }, [inventario, filterText, filterArea, filterCategoria]);
 
   function downloadAllInventario() {
-    const tipo = (prompt('¿Descargar TODO como PDF o Excel? (pdf / excel)') || '').toLowerCase()
-    const data = inventario || []
+    const tipo = (prompt('¿Descargar TODO como PDF o Excel? (pdf / excel)') || '').toLowerCase();
+    const data = inventario || [];
 
     if (tipo === 'pdf') {
-      const w = window.open('', '_blank')
+      const w = window.open('', '_blank');
       const html = `
         <h2>Inventario (Total: ${data.length})</h2>
         <table border="1" style="border-collapse:collapse;width:100%">
           <thead>
             <tr>
-              <th>Inv</th><th>Equipo</th><th>Marca</th><th>Área</th><th>Estado</th>
+              <th>ID</th><th>Inventario</th><th>Equipo</th><th>Marca</th><th>Modelo</th><th>No. Serie</th><th>Ubicación</th><th>Área</th><th>Categoría</th><th>Estado</th><th>Fecha registro</th>
             </tr>
           </thead>
           <tbody>
-            ${data.map(it => `
+            ${data
+              .map(
+                (it) => `
               <tr>
-                <td>${it.numero_inventario || ''}</td>
-                <td>${it.nombre || ''}</td>
-                <td>${it.marca || ''}</td>
-                <td>${it.area || ''}</td>
-                <td>${it.activo ? 'Activado' : 'Desactivado'}</td>
+                <td>${it.id_equipo ?? ''}</td>
+                <td>${it.numero_inventario ?? ''}</td>
+                <td>${it.nombre_equipo ?? ''}</td>
+                <td>${it.marca ?? ''}</td>
+                <td>${it.modelo ?? ''}</td>
+                <td>${it.numero_serie ?? ''}</td>
+                <td>${it.ubicacion_especifica ?? ''}</td>
+                <td>${it.nombre_area ?? it.id_area ?? ''}</td>
+                <td>${it.nombre_categoria ?? it.id_categoria ?? ''}</td>
+                <td>${it.activo ? 'Activo' : 'Inactivo'}</td>
+                <td>${it.fecha_registro ? String(it.fecha_registro).slice(0, 10) : ''}</td>
               </tr>
-            `).join('')}
+            `
+              )
+              .join('')}
           </tbody>
         </table>
-      `
-      w.document.write(html)
-      w.document.close()
-      w.print()
-      return
+      `;
+      w.document.write(html);
+      w.document.close();
+      w.print();
+      return;
     }
 
     if (tipo === 'excel') {
       const rows = [
-        ['Inv', 'Equipo', 'Marca', 'Área', 'Estado'],
+        ['ID', 'Inventario', 'Equipo', 'Marca', 'Modelo', 'No. Serie', 'Ubicación', 'Área', 'Categoría', 'Estado', 'Fecha registro'],
         ...data.map((it) => [
-          it.numero_inventario || '',
-          it.nombre || '',
-          it.marca || '',
-          it.area || '',
-          it.activo ? 'Activado' : 'Desactivado',
+          it.id_equipo ?? '',
+          it.numero_inventario ?? '',
+          it.nombre_equipo ?? '',
+          it.marca ?? '',
+          it.modelo ?? '',
+          it.numero_serie ?? '',
+          it.ubicacion_especifica ?? '',
+          it.nombre_area ?? it.id_area ?? '',
+          it.nombre_categoria ?? it.id_categoria ?? '',
+          it.activo ? 'Activo' : 'Inactivo',
+          it.fecha_registro ? String(it.fecha_registro).slice(0, 10) : '',
         ]),
-      ]
+      ];
+
       const csv = rows
         .map((r) => r.map((x) => `"${String(x).replaceAll('"', '""')}"`).join(','))
-        .join('\n')
+        .join('\n');
 
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `inventario_total.csv`
-      a.click()
-      URL.revokeObjectURL(url)
-      return
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `inventario_total.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      return;
     }
 
-    alert('Escribe "pdf" o "excel".')
-  }
-
-  function handleDeleteSelected() {
-    if (!selected.length) return alert('No hay elementos seleccionados.')
-    if (!confirm(`¿Eliminar ${selected.length} elemento(s) seleccionados?`)) return
-
-    if (typeof onDeleteMany === 'function') {
-      onDeleteMany(selected)
-      clearSelection()
-      return
-    }
-
-    alert('Eliminar seleccionados no está configurado en App.jsx (falta onDeleteMany).')
-  }
-
-  function handleDeleteOne(it) {
-    if (!confirm(`¿Eliminar inventario ${it.numero_inventario || it.id_equipo}?`)) return
-
-    if (typeof onDelete === 'function') {
-      onDelete(it)
-      const k = getItemKey(it)
-      setSelected((prev) => prev.filter((x) => x !== k))
-      return
-    }
-
-    alert('Eliminar no está configurado en App.jsx (falta onDelete).')
+    alert('Escribe "pdf" o "excel".');
   }
 
   return (
     <section className="card">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
         <h2 style={{ margin: 0 }}>Inventario</h2>
-        <button className="btn" onClick={() => onUpsert(null)}>Agregar</button>
-      </div>
-
-      <div style={{ marginTop: 12 }} className="card">
-        <label>Buscar / filtrar</label>
-
-        <div className="row" style={{ alignItems: 'center', gap: 8 }}>
-          <input
-            value={filterText}
-            onChange={(e) => setFilterText(e.target.value)}
-            placeholder="Nombre, marca o número"
-          />
-
-          {/* ✅ SIEMPRE TODAS LAS ÁREAS */}
-          <select value={filterArea} onChange={(e) => setFilterArea(e.target.value)}>
-            <option value="">Área (todas)</option>
-            {AREAS_DB.map((a) => (
-              <option key={a} value={a}>{a}</option>
-            ))}
-          </select>
-
-          <button className="btn" onClick={() => {}}>Aplicar</button>
-
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button className="btn" onClick={onAdd}>
+            Agregar
+          </button>
           <button className="btn" onClick={downloadAllInventario}>
             <i className="fa-solid fa-download" style={{ marginRight: 8 }}></i>
             Descargar todo
           </button>
-
-          <button className="btn ghost" onClick={handleDeleteSelected} disabled={!selected.length}>
-            <i className="fa-solid fa-trash" style={{ marginRight: 8 }}></i>
-            Eliminar
-          </button>
-        </div>
-
-        <div className="small muted" style={{ marginTop: 8, display: 'flex', gap: 10, alignItems: 'center' }}>
-          <span>Resultados: <strong>{list.length}</strong></span>
-          <span>Seleccionados: <strong>{selected.length}</strong></span>
-          <button className="nav-btn" onClick={selectAllVisible}>Seleccionar visibles</button>
-          <button className="nav-btn" onClick={clearSelection}>Limpiar selección</button>
         </div>
       </div>
 
       <div style={{ marginTop: 12 }} className="card">
-        <table>
+        <label>Buscar / filtrar</label>
+        <div className="row" style={{ alignItems: "center", gap: 8 }}>
+          <input
+            value={filterText}
+            onChange={(e) => setFilterText(e.target.value)}
+            placeholder="Inventario, nombre, marca, modelo, serie, ubicación..."
+          />
+
+          <select value={filterArea} onChange={(e) => setFilterArea(e.target.value)}>
+            <option value="">Área (todas)</option>
+            {(areas || []).map((a) => (
+              <option key={a.id_area} value={a.id_area}>
+                {a.nombre_area}
+              </option>
+            ))}
+          </select>
+
+          <select value={filterCategoria} onChange={(e) => setFilterCategoria(e.target.value)}>
+            <option value="">Categoría (todas)</option>
+            {(categorias || []).map((c) => (
+              <option key={c.id_categoria} value={c.id_categoria}>
+                {c.nombre_categoria}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 10, overflowX: "auto" }}>
+        <table className="table">
           <thead>
             <tr>
-              <th style={{ width: 40 }}></th>
-              <th>Inv</th>
+              <th>ID</th>
+              <th>Inventario</th>
               <th>Equipo</th>
               <th>Marca</th>
+              <th>Modelo</th>
+              <th>No. Serie</th>
+              <th>Ubicación</th>
               <th>Área</th>
+              <th>Categoría</th>
               <th>Estado</th>
-              <th style={{ width: 170 }}></th>
+              <th>Fecha registro</th>
+              <th>Acciones</th>
             </tr>
           </thead>
-
           <tbody>
-            {list.length ? list.map((it) => {
-              const key = getItemKey(it)
-              const checked = selected.includes(key)
+            {list.map((it) => (
+              <tr key={it.id_equipo}>
+                <td>{it.id_equipo}</td>
+                <td>{it.numero_inventario}</td>
+                <td style={{ minWidth: 240 }}>{it.nombre_equipo}</td>
+                <td>{it.marca || "—"}</td>
+                <td>{it.modelo || "—"}</td>
+                <td>{it.numero_serie || "—"}</td>
+                <td style={{ minWidth: 200 }}>{it.ubicacion_especifica || "—"}</td>
+                <td>{it.nombre_area || it.id_area}</td>
+                <td>{it.nombre_categoria || it.id_categoria}</td>
+                <td>{it.activo ? "Activo" : "Inactivo"}</td>
+                <td>{it.fecha_registro ? String(it.fecha_registro).slice(0, 10) : "—"}</td>
+                <td style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button className="nav-btn" onClick={() => onReportFalla?.(it)}>
+                    Enviar a bitácora
+                  </button>
 
-              return (
-                <tr key={key}>
-                  <td style={{ textAlign: 'center' }}>
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={() => toggleSelect(it)}
-                    />
-                  </td>
-
-                  <td>{it.numero_inventario || '—'}</td>
-                  <td>{it.nombre || '—'}</td>
-                  <td>{it.marca || '—'}</td>
-                  <td>{it.area || '—'}</td>
-                  <td>{it.activo ? 'Activado' : 'Desactivado'}</td>
-
-                  <td style={{ textAlign: 'right', display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                    <button className="icon-btn" title="Descargar" onClick={() => onDownload(it)}>
-                      <i className="fa-solid fa-download"></i>
-                    </button>
-
-                    <button className="icon-btn" title="Abrir" onClick={() => onOpenDetail(it)}>
-                      <i className="fa-solid fa-folder-open"></i>
-                    </button>
-
-                    <button className="icon-btn" title="Editar" onClick={() => onUpsert(it)}>
-                      <i className="fa-solid fa-pen-to-square"></i>
-                    </button>
-
-                    <button className="icon-btn" title="Borrar" onClick={() => handleDeleteOne(it)}>
-                      <i className="fa-solid fa-trash"></i>
-                    </button>
-                  </td>
-                </tr>
-              )
-            }) : (
-              <tr><td colSpan={7} className="small muted">No hay resultados.</td></tr>
+                  <button className="btn" onClick={() => onEdit?.(it)}>
+                    Editar
+                  </button>
+                  <button className="btn danger" onClick={() => onTrash?.(it)}>
+                    Borrar
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {list.length === 0 && (
+              <tr>
+                <td colSpan={12} className="muted">
+                  No hay registros.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
       </div>
     </section>
-  )
+  );
 }
