@@ -3,13 +3,14 @@ import Header from './components/Header.jsx'
 import Modal from './components/Modal.jsx'
 import { useLocalStorageState } from './components/useLocalStorageState.js'
 
-import HomeView from './views/HomeView.jsx'
-import InventarioView from './views/InventarioView.jsx'
-import BitacoraView from './views/BitacoraView.jsx'
-import FormularioView from './views/FormularioView.jsx'
-import LoginView from './views/LoginView.jsx'
-import PerfilUsuariosView from "./views/PerfilUsuariosView"
-import PapeleraView from './views/PapeleraView.jsx'
+import Home from './views/Home.jsx'
+import Inventario from './views/Inventario.jsx'
+import Bitacora from './views/Bitacora.jsx'
+import Formulario from './views/Formulario.jsx'
+import Login from './views/Login.jsx'
+import PerfilUsuarios from "./views/PerfilUsuarios.jsx"
+import Papelera from './views/Papelera.jsx'
+
 import { apiFetch } from "./services/api.js"
 import logoLeft from './assets/logo_left.png'
 import logoRight from './assets/logo_right.png'
@@ -19,7 +20,7 @@ function isoDate() {
 }
 
 export default function App() {
-  // ✅ SIEMPRE iniciar en login
+  //  SIEMPRE iniciar en login
   const [view, setView] = useState('login')
 
   // Auth desde localStorage (lo que sea que guardes ahí)
@@ -40,7 +41,7 @@ export default function App() {
   const [pendientes, setPendientes] = useLocalStorageState('pendientes', [])
   const [terminados, setTerminados] = useLocalStorageState('terminados', [])
 
-  // ✅ Modal “reactivo” (NO guardar JSX congelado para bitácora)
+  //  Modal “reactivo” (NO guardar JSX congelado para bitácora)
   const [modal, setModal] = useState({
     open: false,
     title: '',
@@ -50,6 +51,7 @@ export default function App() {
   })
 
   function openModal(title, body) {
+    console.log("ABRIENDO MODAL ✅")
     setModal({ open: true, title, kind: null, bitacoraId: null, body })
   }
 
@@ -61,7 +63,7 @@ export default function App() {
     setModal({ open: false, title: '', kind: null, bitacoraId: null, body: null })
   }
 
-  // ✅ Helpers inventario API
+  //  Helpers inventario API
   async function loadInventario() {
     const r = await apiFetch("/api/equipos")
     setInventario(r.data || [])
@@ -84,7 +86,7 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth])
 
-  // ✅ Demo seed (si no tienes nada aún)
+  //  Demo seed (si no tienes nada aún)
   useEffect(() => {
     if (bitacoras.length === 0) {
       setBitacoras([
@@ -816,7 +818,7 @@ export default function App() {
   const content = useMemo(() => {
     if (view === 'home') {
       return (
-        <HomeView
+        <Home
           inventario={inventario}
           bitacoras={bitacoras}
           onGoForm={() => setView('formulario')}
@@ -827,12 +829,12 @@ export default function App() {
     }
     if (view === 'inventario') {
       return (
-        <InventarioView
+        <Inventario
           auth={auth}
           inventario={inventario}
           areas={areas}
           categorias={categorias}
-          onAdd={() => upsertInventario(null)}
+          onAdd={() => {console.log("onAdd en App ✅");upsertInventario(null)}}
           onEdit={(it) => upsertInventario(it)}
           onTrash={(it) => trashInventario(it)}
           onReportFalla={(it) => openReportFallaModal(it)}
@@ -842,22 +844,22 @@ export default function App() {
       )
     }
     if (view === 'bitacora') {
-      return <BitacoraView bitacoras={bitacoras} onNew={createNewBitacora} onOpen={openBitacoraDetail} onDownload={downloadBitacora} />
+      return <Bitacora bitacoras={bitacoras} onNew={createNewBitacora} onOpen={openBitacoraDetail} onDownload={downloadBitacora} />
     }
     if (view === 'perfil') {
       if (auth?.rol !== 'jefe') return <div className="card">No tienes permisos para ver usuarios.</div>
-      return <PerfilUsuariosView />
+      return <PerfilUsuarios />
     }
     if (view === 'papelera') {
-      return <PapeleraView auth={auth} onBack={() => setView('inventario')} onRestored={() => loadInventario()} />
+      return <Papelera auth={auth} onBack={() => setView('inventario')} onRestored={() => loadInventario()} />
     }
-    return <FormularioView pendientes={pendientes} setPendientes={setPendientes} terminados={terminados} setTerminados={setTerminados} />
+    return <Formulario pendientes={pendientes} setPendientes={setPendientes} terminados={terminados} setTerminados={setTerminados} />
   }, [view, auth, inventario, areas, categorias, bitacoras, pendientes, terminados])
 
   // ✅ Render final
   if (view === 'login' || !auth) {
     return (
-      <LoginView
+      <Login
         onLogin={() => {
           let nextAuth = null
           try { nextAuth = JSON.parse(localStorage.getItem('auth') || "null") } catch {}
@@ -894,4 +896,3 @@ export default function App() {
     </>
   )
 }
-

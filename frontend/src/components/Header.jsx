@@ -1,10 +1,11 @@
 import React from 'react'
 import logoLeft from '../assets/logo_left.png'
 import logoRight from '../assets/logo_right.png'
-
+import '../styles/Header.css'
 
 export default function Header({ view, setView, auth, onTrashClick, onAddClick }) {
   const isJefe = auth?.rol === 'jefe'
+
   const NavBtn = ({ id, label }) => (
     <button
       className={'nav-btn' + (view === id ? ' active' : '')}
@@ -15,85 +16,71 @@ export default function Header({ view, setView, auth, onTrashClick, onAddClick }
   )
 
   return (
-    <header>
-      <div className="container topbar">
-        <div className="brand" style={{ alignItems: 'center' }}>
-          <img src={logoLeft} alt="Logo izquierdo" style={{ height: 48, objectFit: 'contain' }} />
-          <div className="logo" style={{ marginLeft: 8 }}>
-            <div>
-              <div className="app-title">Gestor Hospitalario</div>
-              <div className="small">Inventario · Bitácoras · Formularios</div>
-            </div>
+    <header className="appHeader">
+      <div className="container appHeader__bar">
+        {/* Brand */}
+        <div className="appHeader__brand">
+          <img src={logoLeft} alt="Logo izquierdo" />
+          <div className="appHeader__titles">
+            <div className="app-title">Gestor Hospitalario</div>
+            <div className="small">Inventario · Bitácoras · Formularios</div>
           </div>
         </div>
 
-        <nav>
+        {/* Nav */}
+        <nav className="appHeader__nav">
           <NavBtn id="home" label="Home" />
           <NavBtn id="inventario" label="Inventario" />
           <NavBtn id="bitacora" label="Bitácora" />
           <NavBtn id="formulario" label="Orden de Servicio" />
         </nav>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <img src={logoRight} alt="Logo derecho" style={{ height: 48, objectFit: 'contain' }} />
+        {/* Right */}
+        <div className="appHeader__right">
+          <img src={logoRight} alt="Logo derecho" style={{ height: 44, objectFit: 'contain' }} />
 
-          <div className="icon-notification" style={{ position: 'relative', cursor: 'pointer' }} title="Notificaciones">
+          {/* Notificaciones */}
+          <div className="appHeader__icon" title="Notificaciones">
             <i className="fa-solid fa-bell fa-lg"></i>
-            <span
-              className="badge"
-              style={{
-                position: 'absolute',
-                top: -6,
-                right: -6,
-                background: 'red',
-                color: 'white',
-                borderRadius: '50%',
-                fontSize: 10,
-                padding: '2px 5px',
-              }}
-            >
-              3
-            </span>
+            <span className="appHeader__badge">3</span>
           </div>
 
-          <div
-            className="icon-profile"
-            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
-          >
-            {/* USUARIOS (solo jefe) */}
+          {/* Acciones */}
+          <div className="appHeader__group">
             {isJefe && (
-              <i
-                className="fa-solid fa-users fa-lg"
+              <div
+                className="appHeader__icon"
                 title="Usuarios"
                 onClick={() => setView('perfil')}
-              ></i>
+              >
+                <i className="fa-solid fa-users fa-lg"></i>
+              </div>
             )}
 
-            {/* AGREGAR */}
             {isJefe && (
-              <i
-                className="fa-solid fa-plus"
-                style={{ color: '#16a34a', cursor: 'pointer' }}
+              <div
+                className="appHeader__icon appHeader__actionPlus"
                 title="Agregar"
                 onClick={(e) => {
                   e.stopPropagation()
                   onAddClick?.()
                 }}
-              ></i>
+              >
+                <i className="fa-solid fa-plus"></i>
+              </div>
             )}
 
-            {/* PAPELERA */}
-            <i
-              className="fa-solid fa-trash-can fa-lg"
-              style={{ color: '#b91c1c', cursor: 'pointer' }}
+            <div
+              className="appHeader__icon appHeader__actionTrash"
               title="Papelera"
               onClick={(e) => {
                 e.stopPropagation()
                 onTrashClick?.()
               }}
-            ></i>
+            >
+              <i className="fa-solid fa-trash-can fa-lg"></i>
+            </div>
           </div>
-
         </div>
       </div>
     </header>

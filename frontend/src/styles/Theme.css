@@ -1,0 +1,23 @@
+:root{
+  --imss-950:#052e22;
+  --imss-900:#064e3b;
+  --imss-800:#065f46;
+  --imss-700:#047857;
+  --imss-600:#059669;
+  --imss-500:#10b981;
+
+  --glass: rgba(255,255,255,.10);
+  --glass-2: rgba(255,255,255,.14);
+  --glass-border: rgba(255,255,255,.18);
+
+  --shadow-1: 0 10px 30px rgba(0,0,0,.18);
+  --shadow-2: 0 18px 60px rgba(0,0,0,.22);
+}
+
+/* Fondo global “tipo Login” (si ya tienes uno, puedes omitir esto) */
+body{
+  background:
+    radial-gradient(1200px 600px at 20% 10%, rgba(255,255,255,.20), transparent 55%),
+    radial-gradient(900px 500px at 70% 20%, rgba(255,255,255,.12), transparent 60%),
+    linear-gradient(140deg, rgba(16,185,129,.18), rgba(6,95,70,.85));
+}

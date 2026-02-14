@@ -1,0 +1,111 @@
+/* src/styles/Modal.css */
+
+/* Ajusta esto si tu header es más alto/bajo */
+:root{
+  --header-h: 74px;
+}
+
+/* Overlay */
+.modal-back{
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+
+  /* ✅ Baja el modal para que NO lo tape el header */
+  padding: calc(var(--header-h) + 18px) 18px 24px;
+
+  background: rgba(0,0,0,.35);
+  backdrop-filter: blur(8px);
+}
+
+/* Card del modal (estilo IMSS) */
+.modal{
+  width: min(1040px, 100%);
+  max-height: calc(100vh - var(--header-h) - 42px);
+  overflow: auto;
+
+  border-radius: 18px;
+  border: 1px solid rgba(6,95,70,.18);
+  background: rgba(255,255,255,.94);
+  box-shadow: 0 22px 70px rgba(0,0,0,.30);
+}
+
+/* Header del modal */
+.modal__top{
+  position: sticky;
+  top: 0;
+  z-index: 1;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+
+  padding: 14px 16px;
+
+  background: linear-gradient(90deg, rgba(6,95,70,.92), rgba(4,120,87,.72));
+  border-bottom: 1px solid rgba(255,255,255,.18);
+  color: #fff;
+}
+
+.modal__title{
+  margin: 0;
+  font-weight: 900;
+  letter-spacing: .2px;
+}
+
+/* Cuerpo */
+.modal__body{
+  padding: 16px;
+}
+
+/* Botón cerrar consistente */
+.modal__closeBtn{
+  background: rgba(255,255,255,.14);
+  border: 1px solid rgba(255,255,255,.22);
+  color: rgba(255,255,255,.95);
+  border-radius: 12px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.modal__closeBtn:hover{
+  background: rgba(255,255,255,.18);
+  border-color: rgba(255,255,255,.30);
+}
+
+/* ✅ Si dentro del modal tienes inputs “feos”, aquí los arreglamos con el tema */
+.modal input,
+.modal select,
+.modal textarea{
+  background: rgba(255,255,255,.96);
+  border: 1px solid rgba(6,95,70,.20);
+  border-radius: 12px;
+  outline: none;
+}
+
+.modal input:focus,
+.modal select:focus,
+.modal textarea:focus{
+  border-color: rgba(16,185,129,.60);
+  box-shadow: 0 0 0 4px rgba(16,185,129,.18);
+}
+
+/* Botones dentro del modal (si ya usas .btn/.danger, se verán bien) */
+.modal .btn{
+  background: linear-gradient(180deg, var(--imss-700), var(--imss-900));
+  border: 1px solid rgba(255,255,255,.14);
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(0,0,0,.18);
+}
+
+.modal .btn:hover{ filter: brightness(1.05); }
+
+.modal .btn.danger{
+  background: linear-gradient(180deg, #b91c1c, #7f1d1d);
+  border: 1px solid rgba(255,255,255,.12);
+}
+.modal-back{ z-index: 99999; }

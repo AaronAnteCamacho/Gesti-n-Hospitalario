@@ -1,0 +1,315 @@
+/* src/styles/Formulario.css */
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.formulario__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.formulario__title {
+  margin: 0;
+}
+
+.formulario__tabsCard {
+  margin-top: 12px;
+}
+
+.formulario__rowActions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.formulario__previewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.formulario__previewLeft {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.formulario__logoImg {
+  height: 44px;
+  object-fit: contain;
+}
+
+.formulario__previewRight {
+  text-align: right;
+}
+
+.formulario__tripleRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.formulario__signRow {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.formulario__modalActions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}/* src/styles/Formulario.css */
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Card principal “glass” */
+.formulario.card {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-1);
+}
+
+/* Header */
+.formulario__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.formulario__title {
+  margin: 0;
+  color: rgba(6, 46, 34, 0.92);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+/* Tabs Card */
+.formulario__tabsCard {
+  margin-top: 12px;
+  background: linear-gradient(
+    180deg,
+    rgba(6, 95, 70, 0.12),
+    rgba(255, 255, 255, 0.10)
+  );
+  border: 1px solid rgba(6, 95, 70, 0.16);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.10);
+  overflow-x: auto;
+}
+
+/* Tabs (re-skin sin romper tu estructura) */
+.formulario .tabs {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.formulario .tab {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(6, 46, 34, 0.90);
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.formulario .tab:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.formulario .tab.active {
+  background: rgba(255, 255, 255, 0.28);
+  border-color: rgba(255, 255, 255, 0.34);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.10);
+}
+
+/* Buscador en tabs */
+.formulario .tabs input {
+  min-width: 240px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(6, 95, 70, 0.18);
+  border-radius: 12px;
+  outline: none;
+}
+.formulario .tabs input:focus {
+  border-color: rgba(16, 185, 129, 0.55);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.18);
+}
+
+/* Tabla estilo legible */
+.formulario__tabsCard table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.formulario__tabsCard thead th {
+  text-align: left;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: rgba(6, 46, 34, 0.95);
+  background: rgba(255, 255, 255, 0.28);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.formulario__tabsCard tbody td {
+  color: rgba(6, 46, 34, 0.88);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.formulario__tabsCard tbody tr:nth-child(odd) td {
+  background: rgba(255, 255, 255, 0.16);
+}
+.formulario__tabsCard tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.10);
+}
+.formulario__tabsCard tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+/* Row actions */
+.formulario__rowActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.formulario__rowActions button {
+  white-space: nowrap;
+}
+
+/* Botones */
+.formulario .btn {
+  background: linear-gradient(180deg, var(--imss-700), var(--imss-900));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+.formulario .btn:hover { filter: brightness(1.05); }
+
+.formulario .nav-btn {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.92);
+}
+.formulario .nav-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+/* Preview header (logos) */
+.formulario__previewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.formulario__previewLeft {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.formulario__logoImg {
+  height: 44px;
+  object-fit: contain;
+}
+
+.formulario__previewRight {
+  text-align: right;
+}
+
+/* Layout interno (si tu form-grid existe) */
+.formulario .form-grid {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  padding: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.formulario .form-grid label {
+  color: rgba(6, 46, 34, 0.78);
+  font-weight: 700;
+}
+
+.formulario input,
+.formulario select,
+.formulario textarea {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(6, 95, 70, 0.18);
+  border-radius: 12px;
+  outline: none;
+}
+
+.formulario input:focus,
+.formulario select:focus,
+.formulario textarea:focus {
+  border-color: rgba(16, 185, 129, 0.55);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.18);
+}
+
+.formulario textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+/* Triple row */
+.formulario__tripleRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Sign row */
+.formulario__signRow {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Acciones modal */
+.formulario__modalActions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+/* Muted */
+.formulario .muted,
+.formulario .small.muted {
+  color: rgba(6, 46, 34, 0.65);
+}

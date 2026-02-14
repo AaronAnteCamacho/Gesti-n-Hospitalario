@@ -1,31 +1,44 @@
-import React, { useEffect } from 'react'
+import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
+import "../styles/Modal.css";
 
 export default function Modal({ open, title, children, onClose }) {
   useEffect(() => {
     function onKey(e) {
-      if (e.key === 'Escape') onClose?.()
+      if (e.key === "Escape") onClose?.();
     }
-    if (open) window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
+    if (open) window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
 
-  if (!open) return null
+  if (!open) return null;
 
-  return (
+  const node = (
     <div
-      className="modal-back show"
-      style={{ display: 'flex' }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose?.()
+      className="modal-back"
+      style={{
+        display: "flex",      // <-- fuerza visible aunque algún CSS ponga display:none
+        zIndex: 999999,       // <-- súper arriba
       }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose?.();
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-label={title || "Modal"}
     >
-      <div className="modal card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ margin: 0 }}>{title}</h3>
-          <button className="nav-btn" onClick={onClose}>Cerrar</button>
+      <div className="modal">
+        <div className="modal__top">
+          <h3 className="modal__title">{title}</h3>
+          <button type="button" className="modal__closeBtn" onClick={onClose}>
+            Cerrar
+          </button>
         </div>
-        <div style={{ marginTop: 12 }}>{children}</div>
+
+        <div className="modal__body">{children}</div>
       </div>
     </div>
-  )
+  );
+
+  return createPortal(node, document.body);
 }

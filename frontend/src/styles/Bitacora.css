@@ -1,0 +1,130 @@
+/* src/styles/Bitacora.css */
+
+.bitacora {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Card principal estilo “glass” como Login */
+.bitacora.card {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-1);
+}
+
+/* Header */
+.bitacora__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Título más legible en fondo claro */
+.bitacora__title {
+  margin: 0;
+  color: rgba(6, 46, 34, 0.92);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+/* Botón principal (verde IMSS) */
+.bitacora .btn {
+  background: linear-gradient(180deg, var(--imss-700), var(--imss-900));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+.bitacora .btn:hover {
+  filter: brightness(1.05);
+}
+
+/* Botones secundarios */
+.bitacora .nav-btn {
+  background: rgba(236, 0, 0, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(160, 14, 14, 0.92);
+}
+.bitacora .nav-btn:hover {
+  background: rgba(153, 29, 29, 0.16);
+  border-color: rgba(156, 22, 22, 0.28);
+}
+
+/* Card tabla */
+.bitacora__tableCard {
+  margin-top: 12px;
+  background: linear-gradient(
+    180deg,
+    rgba(6, 95, 70, 0.12),
+    rgba(255, 255, 255, 0.10)
+  );
+  border: 1px solid rgba(6, 95, 70, 0.16);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.10);
+}
+
+/* Wrapper por si hay overflow */
+.bitacora__tableCard {
+  overflow-x: auto;
+}
+
+/* Tabla estilo legible (igual que Inventario) */
+.bitacora__tableCard table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* Header tabla */
+.bitacora__tableCard thead th {
+  text-align: left;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: rgba(6, 46, 34, 0.95);
+  background: rgba(255, 255, 255, 0.28);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+/* Celdas */
+.bitacora__tableCard tbody td {
+  color: rgba(6, 46, 34, 0.88);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+/* Zebra suave */
+.bitacora__tableCard tbody tr:nth-child(odd) td {
+  background: rgba(255, 255, 255, 0.16);
+}
+.bitacora__tableCard tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+/* Hover */
+.bitacora__tableCard tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+/* Acciones centradas y en una fila */
+.bitacora__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.bitacora__actions button {
+  white-space: nowrap;
+}
+
+/* Muted dentro de bitácora */
+.bitacora .muted,
+.bitacora .small.muted {
+  color: rgba(6, 46, 34, 0.65);
+}

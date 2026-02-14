@@ -1,0 +1,324 @@
+/* src/styles/Inventario.css */
+
+.inventario {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Card principal estilo “glass” como Login */
+.inventario.card {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-1);
+}
+
+/* Header */
+.inventario__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* TÍTULO legible */
+.inventario__title {
+  margin: 0;
+  color: rgba(6, 46, 34, 0.92);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.inventario__headerActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Botones (NO tocar look) */
+.inventario .btn {
+  background: linear-gradient(180deg, var(--imss-700), var(--imss-900));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+
+.inventario .btn:hover {
+  filter: brightness(1.05);
+}
+
+.inventario .btn.danger {
+  background: linear-gradient(180deg, #b91c1c, #7f1d1d);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* nav-btn general en inventario */
+.inventario .nav-btn {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.inventario .nav-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+/* Filtros “glass verde” */
+.inventario__filters {
+  margin-top: 8px;
+  background: linear-gradient(
+    180deg,
+    rgba(6, 95, 70, 0.14),
+    rgba(255, 255, 255, 0.12)
+  );
+  border: 1px solid rgba(6, 95, 70, 0.18);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.10);
+}
+
+.inventario__filters label {
+  color: rgba(6, 46, 34, 0.75);
+  font-weight: 700;
+}
+
+.inventario__filtersRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Input + selects “tipo Login” */
+.inventario__filtersRow input,
+.inventario__filtersRow select {
+  flex: 1;
+  min-width: 240px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(6, 95, 70, 0.18);
+  border-radius: 12px;
+  outline: none;
+}
+
+.inventario__filtersRow input:focus,
+.inventario__filtersRow select:focus {
+  border-color: rgba(16, 185, 129, 0.55);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.18);
+}
+
+/* Tabla */
+.inventario__tableWrap {
+  margin-top: 10px;
+  overflow-x: auto;
+}
+
+/* Fondo “glass” detrás de la tabla */
+.inventario__tableWrap table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* Header de tabla */
+.inventario__tableWrap thead th {
+  text-align: left;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: rgba(6, 46, 34, 0.95);
+  background: rgba(255, 255, 255, 0.28);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+/* Celdas */
+.inventario__tableWrap tbody td {
+  color: rgba(6, 46, 34, 0.88);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+/* Zebra suave */
+.inventario__tableWrap tbody tr:nth-child(odd) td {
+  background: rgba(255, 255, 255, 0.16);
+}
+.inventario__tableWrap tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+/* Hover */
+.inventario__tableWrap tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+/* Columnas estables */
+.inventario__colEquipo {
+  min-width: 260px;
+}
+.inventario__colUbicacion {
+  min-width: 200px;
+}
+
+/* Acciones en una sola fila */
+.inventario__acciones {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.inventario__acciones button {
+  white-space: nowrap;
+}
+
+/* Muted en inventario */
+.inventario .muted,
+.inventario .small.muted {
+  color: rgba(6, 46, 34, 0.65);
+}
+
+/*  Botón "Enviar a bitácora" azul fuerte*/
+.inventario .nav-btn.inventario__sendBtn {
+  background: linear-gradient(180deg, #2563eb, #3b60da) !important;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 34px rgba(30, 64, 175, 0.28);
+}
+
+.inventario .nav-btn.inventario__sendBtn:hover {
+  filter: brightness(1.08);
+}
+
+.inventario .nav-btn.inventario__sendBtn:active {
+  transform: translateY(1px);
+}
+
+/* ===== Scroll hint arriba (Inventario) ===== */
+
+.inventario__tableWrap{
+  position: relative;
+}
+
+/* Texto/ayuda */
+.inventario__scrollHint{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 10px;
+  padding: 8px 12px;
+  border-radius: 12px;
+
+  background: rgba(255,255,255,.16);
+  border: 1px solid rgba(255,255,255,.18);
+  color: rgba(6,46,34,.75);
+  font-weight: 800;
+}
+
+/* Flechita animada */
+.inventario__scrollHint i{
+  color: rgba(37,99,235,.85);
+  animation: invHint 1.1s ease-in-out infinite;
+}
+@keyframes invHint{
+  0%,100%{ transform: translateX(0); opacity: .75; }
+  50%{ transform: translateX(6px); opacity: 1; }
+}
+
+/* Degradado a la derecha para indicar “hay más” */
+.inventario__tableWrap::after{
+  content:"";
+  position:absolute;
+  top: 44px;              /* baja un poco para no tapar el hint */
+  right: 0;
+  width: 48px;
+  height: calc(100% - 44px);
+  pointer-events:none;
+  background: linear-gradient(90deg, transparent, rgba(6,95,70,.18));
+  border-radius: 14px;
+}
+
+/* Hint clickeable */
+.inventario__scrollHint{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 6px 0 10px;
+  padding: 8px 12px;
+  border-radius: 12px;
+
+  background: rgba(255,255,255,.16);
+  border: 1px solid rgba(255,255,255,.18);
+  color: rgba(6,46,34,.75);
+  font-weight: 800;
+}
+
+.inventario__scrollBtn{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width: 40px;
+  height: 32px;
+  border-radius: 10px;
+  cursor: pointer;
+
+  background: rgba(37,99,235,.14);
+  border: 1px solid rgba(37,99,235,.25);
+  color: rgba(37,99,235,.95);
+}
+
+.inventario__scrollBtn:hover{
+  background: rgba(37,99,235,.18);
+  border-color: rgba(37,99,235,.34);
+}
+
+.inventario__scrollBtn i{
+  animation: invHint 1.1s ease-in-out infinite;
+}
+
+@keyframes invHint{
+  0%,100%{ transform: translateX(0); opacity: .75; }
+  50%{ transform: translateX(4px); opacity: 1; }
+}
+
+.inventario__filtersRow select {
+  color: rgba(6, 46, 34, 0.92) !important;
+}
+
+
+.inventario__filtersRow select option {
+  color: rgba(6, 46, 34, 0.92);
+}
+
+
+.inventario__filtersRow select:invalid {
+  color: rgba(6, 46, 34, 0.92) !important;
+}
+
+.inventario__filtersRow select {
+  opacity: 1 !important;
+}
+
+/* ===== Fix: que "Área (todas)" y "Categoría (todas)" se vean igual ===== */
+
+/* 1) Fuerza color del texto del select (Chrome usa text-fill) */
+.inventario select {
+  color: rgba(6, 46, 34, 0.92) !important;
+  -webkit-text-fill-color: rgba(6, 46, 34, 0.92) !important;
+  opacity: 1 !important;
+}
+
+/* 2) Fuerza también el option placeholder (value="") */
+.inventario select option[value=""] {
+  color: rgba(6, 46, 34, 0.92) !important;
+}
+
+/* 3) Evita que un tema lo “apague” con apariencia del SO */
+.inventario select {
+  -webkit-appearance: none;
+  appearance: none;
+}
