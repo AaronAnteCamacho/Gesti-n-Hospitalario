@@ -655,7 +655,200 @@ export default function App() {
     openBitacoraModal(b.id)
   }
 
-  function downloadBitacora() { }
+function downloadBitacora(b) {
+  if (!b) return;
+
+  const tipo = (prompt('¿Descargar como PDF o Excel? (pdf / excel)') || '').toLowerCase();
+  const safe = (v) =>
+    String(v ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;");
+
+  const rows = (b.items?.length ? b.items : []);
+
+  const fecha = b.fecha || isoDate();
+  const nombre = (b.nombre || 'BITÁCORA DE REVISIÓN').toUpperCase();
+
+  if (tipo === "excel") {
+    // Cabecera + 2 filas de encabezado (tipo tu Excel)
+    const out = [
+      ['HOSPITAL DE ESPECIALIDADES "DR. ANTONIO GONZALEZ GUEVARA"'],
+      ['AREA DE MANTENIMIENTO'],
+      [nombre],
+      ['FECHA: ' + fecha],
+      [''],
+      [
+        "No. DE INVENTARIO",
+        "EQUIPO MÉDICO",
+        "MARCA",
+        "MODELO",
+        "NÚMERO DE SERIE",
+        "UBICACIÓN ESPECÍFICA",
+        "FUNCIONAMIENTO (CORRECTO)",
+        "FUNCIONAMIENTO (INCORRECTO)",
+        "SENSORES (CORRECTO)",
+        "SENSORES (INCORRECTO)",
+        "REQUIERE REPARACIÓN (SI)",
+        "REQUIERE REPARACIÓN (NO)",
+        "FECHA",
+        "OBSERVACIONES",
+      ],
+      ...rows.map((r) => [
+        r.numero_inventario || r.inventario || r.inv || "",
+        r.equipo || r.nombre_equipo || r.nombre || "",
+        r.marca || "",
+        r.modelo || "",
+        r.numero_serie || r.serie || "",
+        r.ubicacion_especifica || r.ubicacion || "",
+        r.funcionamiento_correcto ? "X" : "",
+        r.funcionamiento_incorrecto ? "X" : "",
+        r.sensores_correcto ? "X" : "",
+        r.sensores_incorrecto ? "X" : "",
+        r.requiere_reparacion_si ? "X" : "",
+        r.requiere_reparacion_no ? "X" : "",
+        fecha,
+        r.observaciones || "",
+      ]),
+    ];
+
+    const csv = out
+      .map((rr) => rr.map((x) => `"${String(x ?? "").replaceAll('"', '""')}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bitacora_${nombre.replaceAll(" ", "_")}_${fecha}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    return;
+  }
+
+  if (tipo === "pdf") {
+    const w = window.open("", "_blank");
+    if (!w) return alert("Permite ventanas emergentes para imprimir.");
+
+    const tableRows = rows
+      .map(
+        (r) => `
+        <tr>
+          <td>${safe(r.numero_inventario || r.inventario || r.inv)}</td>
+          <td>${safe(r.equipo || r.nombre_equipo || r.nombre)}</td>
+          <td>${safe(r.marca)}</td>
+          <td>${safe(r.modelo)}</td>
+          <td>${safe(r.numero_serie || r.serie)}</td>
+          <td>${safe(r.ubicacion_especifica || r.ubicacion)}</td>
+          <td class="c">${r.funcionamiento_correcto ? "X" : ""}</td>
+          <td class="c">${r.funcionamiento_incorrecto ? "X" : ""}</td>
+          <td class="c">${r.sensores_correcto ? "X" : ""}</td>
+          <td class="c">${r.sensores_incorrecto ? "X" : ""}</td>
+          <td class="c">${r.requiere_reparacion_si ? "X" : ""}</td>
+          <td class="c">${r.requiere_reparacion_no ? "X" : ""}</td>
+          <td>${safe(fecha)}</td>
+          <td>${safe(r.observaciones || "")}</td>
+        </tr>`
+      )
+      .join("");
+
+    w.document.write(`
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>${safe(nombre)}</title>
+          <style>
+            body{font-family:Arial,Helvetica,sans-serif;padding:18px;}
+            .hdr{
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+}
+
+.hdr-logo{
+  width: 70px;
+  height: auto;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+/* Solo el logo de la izquierda */
+.hdr-logo-left{
+  width: 95px; /* ajusta: 85, 90, 100... */
+}
+
+.hdr-center{
+  flex: 1;
+  text-align: center;
+  padding: 0 12px;
+}
+            .t1{font-weight:800;font-size:14px;}
+            .t2{font-weight:800;font-size:13px;margin-top:3px;}
+            .t3{font-weight:900;font-size:14px;margin-top:6px;}
+            .meta{text-align:left;max-width:980px;margin:10px auto 0;font-size:12px;}
+            table{width:100%;border-collapse:collapse;font-size:11px;margin-top:12px;}
+            th,td{border:1px solid #333;padding:6px;vertical-align:top;}
+            th{background:#f2f2f2}
+            .c{text-align:center;font-weight:800}
+          </style>
+        </head>
+        <body>
+          <div class="hdr">
+  <img class="hdr-logo hdr-logo-left" src="${logoLeft}" alt="Logo izquierda" />
+
+  <div class="hdr-center">
+    <div class="t1">HOSPITAL DE ESPECIALIDADES "DR. ANTONIO GONZALEZ GUEVARA"</div>
+    <div class="t2">AREA DE MANTENIMIENTO</div>
+    <div class="t3">${safe(nombre)}</div>
+  </div>
+
+  <img class="hdr-logo" src="${logoRight}" alt="Logo derecha" />
+</div>
+          <div class="meta">
+            <div><b>Fecha:</b> ${safe(fecha)}</div>
+            <div><b>Nº de artículos:</b> ${rows.length}</div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th rowspan="2">No. de inventario</th>
+                <th rowspan="2">Equipo médico</th>
+                <th rowspan="2">Marca</th>
+                <th rowspan="2">Modelo</th>
+                <th rowspan="2">Número de serie</th>
+                <th rowspan="2">Ubicación específica</th>
+                <th colspan="2">Funcionamiento</th>
+                <th colspan="2">Sensores</th>
+                <th colspan="2">Requiere reparación</th>
+                <th rowspan="2">Fecha</th>
+                <th rowspan="2">Observaciones</th>
+              </tr>
+              <tr>
+                <th>Correcto</th><th>Incorrecto</th>
+                <th>Correcto</th><th>Incorrecto</th>
+                <th>Si</th><th>No</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows || `<tr><td colspan="14">Sin registros para imprimir.</td></tr>`}
+            </tbody>
+          </table>
+
+          <script>
+            window.onload = () => window.print();
+          </script>
+        </body>
+      </html>
+    `);
+
+    w.document.close();
+    return;
+  }
+
+  alert('Escribe "pdf" o "excel".');
+}
 
   // ✅ Componente “hoja” REACTIVO (lee desde bitacoras actuales)
   function BitacoraSheet({ bitacoraId }) {

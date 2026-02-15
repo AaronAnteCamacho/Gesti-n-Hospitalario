@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Modal from "../components/Modal.jsx";
 import "../styles/Inventario.css";
+import logoLeft from "../assets/logo_left.png";
+import logoRight from "../assets/logo_right.png";
 
 function norm(s) {
   return String(s || "")
@@ -222,67 +224,204 @@ export default function InventarioView({
     el.scrollBy({ left: dir * step, behavior: "smooth" });
   }
 
-  function downloadAllInventario() {
-    const type = prompt('Escribe "pdf" o "excel":', "pdf");
-    if (!type) return;
+function downloadAllInventario() {
+  const type = prompt('Escribe "pdf" o "excel":', "pdf");
+  if (!type) return;
 
-    if (type.toLowerCase() === "excel") {
-      const rows = [
-        [
-          "ID",
-          "Inventario",
-          "Equipo",
-          "Marca",
-          "Modelo",
-          "Serie",
-          "Ubicación",
-          "Área",
-          "Categoría",
-          "Activo",
-        ],
-        ...list.map((it) => [
-          it.id_equipo,
-          it.numero_inventario,
-          it.nombre_equipo,
-          it.marca,
-          it.modelo,
-          it.numero_serie,
-          it.ubicacion_especifica,
-          it.nombre_area ?? it.id_area ?? "",
-          it.nombre_categoria ?? it.id_categoria ?? "",
-          it.activo ? "SI" : "NO",
-        ]),
-      ];
+  const safe = (v) =>
+    String(v ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;");
 
-      const csv = rows
-        .map((r) =>
-          r.map((x) => `"${String(x ?? "").replace(/"/g, '""')}"`).join(",")
-        )
-        .join("\n");
+  // Texto de filtros activos (para que salga en la cabecera)
+  const areaName =
+    areas?.find((a) => String(a.id_area) === String(filterArea))?.nombre_area ||
+    (filterArea ? `ID ${filterArea}` : "TODAS");
+  const catName =
+    categorias?.find((c) => String(c.id_categoria) === String(filterCategoria))
+      ?.nombre_categoria || (filterCategoria ? `ID ${filterCategoria}` : "TODAS");
 
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `inventario_${new Date().toISOString().slice(0, 10)}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-      return;
-    }
+  const filtroTexto = filterText?.trim() ? filterText.trim() : "";
 
-    if (type.toLowerCase() === "pdf") {
-      const w = window.open("", "_blank");
-      if (!w) return alert("Permite ventanas emergentes para imprimir.");
-      w.document.write(`<h2>Inventario (${list.length})</h2>`);
-      w.document.write("<pre>Usa imprimir del navegador</pre>");
-      w.document.close();
-      w.print();
-      return;
-    }
+  const fecha = new Date().toISOString().slice(0, 10);
 
-    alert('Escribe "pdf" o "excel".');
+  if (type.toLowerCase() === "excel") {
+    // Cabecera tipo Excel (líneas arriba) + tabla
+    const rows = [
+      ['SERVICIOS DE SALUD DEL INSTITUTO MEXICANO DEL SEGURO SOCIAL PARA EL BIENESTAR'],
+      ['UNIDAD DE INFRAESTRUCTURA'],
+      ['COORDINACIÓN DE EQUIPAMIENTO PARA ESTABLECIMIENTOS DE SALUD'],
+      [''],
+      [`FECHA DESCARGA: ${fecha}`],
+      [`FILTRO ÁREA: ${areaName} | FILTRO CATEGORÍA: ${catName}${filtroTexto ? " | BÚSQUEDA: " + filtroTexto : ""}`],
+      [''],
+      [
+        "N.P.",
+        "No. DE INVENTARIO",
+        "ENTIDAD FEDERATIVA",
+        "CLUES",
+        "UNIDAD MÉDICA",
+        "ESPECIALIDAD/ÁREA DEL HOSPITAL",
+        "UBICACIÓN ESPECÍFICA",
+        "CATEGORÍA",
+        "CLAVE CNIS",
+        "EQUIPO MÉDICO",
+        "MARCA",
+        "MODELO",
+        "NÚMERO DE SERIE",
+        "ESTATUS",
+      ],
+      ...list.map((it, idx) => [
+        idx + 1,
+        it.numero_inventario ?? "",
+        "NAYARIT",
+        "NTIMB001246",
+        'HOSPITAL CIVIL DR. ANTONIO GONZÁLEZ GUEVARA NTIMB001246',
+        it.nombre_area ?? it.id_area ?? "",
+        it.ubicacion_especifica ?? "",
+        it.nombre_categoria ?? it.id_categoria ?? "",
+        it.clave_cnis ?? "S/N",
+        it.nombre_equipo ?? "",
+        it.marca ?? "",
+        it.modelo ?? "",
+        it.numero_serie ?? "",
+        it.activo ? "PROPIO" : "BAJA",
+      ]),
+    ];
+
+    const csv = rows
+      .map((r) =>
+        r.map((x) => `"${String(x ?? "").replace(/"/g, '""')}"`).join(",")
+      )
+      .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `inventario_${fecha}_FILTRADO.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    return;
   }
 
+  if (type.toLowerCase() === "pdf") {
+    const w = window.open("", "_blank");
+    if (!w) return alert("Permite ventanas emergentes para imprimir.");
+
+    const headerHTML = `
+  <div class="hdr">
+  <img class="hdr-logo" src="${logoLeft}" alt="Logo izquierda" />
+
+  <div class="hdr-center">
+    <div class="h1">SERVICIOS DE SALUD DEL INSTITUTO MEXICANO DEL SEGURO SOCIAL PARA EL BIENESTAR</div>
+    <div class="h2">UNIDAD DE INFRAESTRUCTURA</div>
+    <div class="h3">COORDINACIÓN DE EQUIPAMIENTO PARA ESTABLECIMIENTOS DE SALUD</div>
+  </div>
+
+  <img class="hdr-logo" src="${logoRight}" alt="Logo derecha" />
+</div>
+`;
+
+    const tableRows = list
+      .map(
+        (it, idx) => `
+        <tr>
+          <td>${idx + 1}</td>
+          <td>${safe(it.numero_inventario)}</td>
+          <td>NAYARIT</td>
+          <td>NTIMB001246</td>
+          <td>HOSPITAL CIVIL DR. ANTONIO GONZÁLEZ GUEVARA NTIMB001246</td>
+          <td>${safe(it.nombre_area ?? it.id_area ?? "")}</td>
+          <td>${safe(it.ubicacion_especifica ?? "")}</td>
+          <td>${safe(it.nombre_categoria ?? it.id_categoria ?? "")}</td>
+          <td>${safe(it.clave_cnis ?? "S/N")}</td>
+          <td>${safe(it.nombre_equipo ?? "")}</td>
+          <td>${safe(it.marca ?? "")}</td>
+          <td>${safe(it.modelo ?? "")}</td>
+          <td>${safe(it.numero_serie ?? "")}</td>
+          <td>${it.activo ? "PROPIO" : "BAJA"}</td>
+        </tr>`
+      )
+      .join("");
+
+    w.document.write(`
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>Inventario filtrado</title>
+          <style>
+            body{font-family:Arial,Helvetica,sans-serif;padding:18px;}
+            .hdr{
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* izquierda - centro - derecha */
+  gap: 12px;
+  width: 100%;
+}
+
+.hdr-logo{
+  width: 70px;       /* ajusta tamaño */
+  height: auto;
+  object-fit: contain;
+  flex: 0 0 auto;    /* que no se estire */
+}
+
+.hdr-center{
+  flex: 1;           /* que el texto ocupe el espacio del medio */
+  text-align: center;
+}
+            .h1{font-weight:800;font-size:14px;}
+            .h2{font-weight:800;font-size:13px;margin-top:3px;}
+            .h3{font-weight:800;font-size:13px;margin-top:3px;}
+            .meta{text-align:left;margin:10px auto 0;max-width:980px;font-size:12px;color:#222;}
+            table{width:100%;border-collapse:collapse;font-size:11px;margin-top:12px;}
+            th,td{border:1px solid #333;padding:6px;vertical-align:top;}
+            th{background:#f2f2f2}
+            @media print{
+              body{padding:0}
+              .hdr{margin-bottom:8px}
+            }
+          </style>
+        </head>
+        <body>
+          ${headerHTML}
+          <table>
+            <thead>
+              <tr>
+                <th>N.P.</th>
+                <th>No. DE INVENTARIO</th>
+                <th>ENTIDAD</th>
+                <th>CLUES</th>
+                <th>UNIDAD MÉDICA</th>
+                <th>ESPECIALIDAD/ÁREA</th>
+                <th>UBICACIÓN</th>
+                <th>CATEGORÍA</th>
+                <th>CLAVE CNIS</th>
+                <th>EQUIPO MÉDICO</th>
+                <th>MARCA</th>
+                <th>MODELO</th>
+                <th>NÚMERO DE SERIE</th>
+                <th>ESTATUS</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows || `<tr><td colspan="14">Sin registros para imprimir.</td></tr>`}
+            </tbody>
+          </table>
+          <script>
+            window.onload = () => window.print();
+          </script>
+        </body>
+      </html>
+    `);
+    w.document.close();
+    return;
+  }
+
+  alert('Escribe "pdf" o "excel".');
+}
   return (
     <section className="card inventario">
       <div className="inventario__header">

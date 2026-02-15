@@ -224,6 +224,35 @@
   border-color: rgba(255, 255, 255, 0.28);
 }
 
+/* ===== Fix: botones visibles dentro de la tabla ===== */
+.formulario__tabsCard .formulario__rowActions button{
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-weight: 800;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* botón principal (Crear/Editar) */
+.formulario__tabsCard .btn{
+  color: #fff;
+}
+
+/* botones secundarios (Eliminar / Descargar) */
+.formulario__tabsCard .nav-btn{
+  background: rgba(6, 95, 70, 0.10);
+  border: 1px solid rgba(6, 95, 70, 0.25);
+  color: rgba(6, 46, 34, 0.92);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.10);
+}
+
+.formulario__tabsCard .nav-btn:hover{
+  background: rgba(6, 95, 70, 0.16);
+  border-color: rgba(6, 95, 70, 0.35);
+}
 /* Preview header (logos) */
 .formulario__previewHeader {
   display: flex;
