@@ -109,3 +109,14 @@
   border: 1px solid rgba(255,255,255,.12);
 }
 .modal-back{ z-index: 99999; }
+
+
+.modal__body input{
+  width: 100%;
+  white-space: nowrap;
+  overflow-x: auto;      /* permite ver todo */
+  text-overflow: clip;   /* quita los "..." */
+}
+.modal__body input::-webkit-scrollbar{
+  height: 6px;
+}

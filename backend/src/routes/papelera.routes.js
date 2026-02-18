@@ -6,7 +6,7 @@ const router = Router();
 
 // GET /api/papelera
 // - jefe: ve todo
-// - empleado: ve solo lo que él borró
+// - empleado: ve solo lo que él mandó a papelera
 router.get(
   "/",
   requireAuth,
@@ -19,49 +19,57 @@ router.get(
       const q = isJefe
         ? `
           SELECT
-            p.id_papelera,
-            p.id_equipo,
-            p.numero_inventario,
-            p.nombre_equipo,
-            p.marca,
-            p.modelo,
-            p.numero_serie,
-            p.ubicacion_especifica,
-            p.id_categoria,
-            p.id_area,
-            p.motivo,
-            p.id_usuario,
-            p.fecha_borrado,
+            e.id_equipo,
+            e.numero_inventario,
+            e.nombre_equipo,
+            e.marca,
+            e.modelo,
+            e.numero_serie,
+            e.ubicacion_especifica,
+            e.id_categoria,
+            e.id_area,
+            e.activo,
+            e.fecha_registro,
+
+            e.motivo_papelera AS motivo,
+            e.id_usuario_papelera AS id_usuario,
+            e.fecha_papelera AS fecha_borrado,
+
             u.nombre AS usuario_nombre,
             u.correo AS usuario_correo
-          FROM equipos_papelera p
-          LEFT JOIN usuarios u ON u.id_usuario = p.id_usuario
-          ORDER BY p.fecha_borrado DESC, p.id_papelera DESC
+          FROM dbo.equipos e
+          LEFT JOIN dbo.usuarios u ON u.id_usuario = e.id_usuario_papelera
+          WHERE e.en_papelera = 1
+          ORDER BY e.fecha_papelera DESC, e.id_equipo DESC
         `
         : `
           SELECT
-            p.id_papelera,
-            p.id_equipo,
-            p.numero_inventario,
-            p.nombre_equipo,
-            p.marca,
-            p.modelo,
-            p.numero_serie,
-            p.ubicacion_especifica,
-            p.id_categoria,
-            p.id_area,
-            p.motivo,
-            p.id_usuario,
-            p.fecha_borrado,
+            e.id_equipo,
+            e.numero_inventario,
+            e.nombre_equipo,
+            e.marca,
+            e.modelo,
+            e.numero_serie,
+            e.ubicacion_especifica,
+            e.id_categoria,
+            e.id_area,
+            e.activo,
+            e.fecha_registro,
+
+            e.motivo_papelera AS motivo,
+            e.id_usuario_papelera AS id_usuario,
+            e.fecha_papelera AS fecha_borrado,
+
             u.nombre AS usuario_nombre,
             u.correo AS usuario_correo
-          FROM equipos_papelera p
-          LEFT JOIN usuarios u ON u.id_usuario = p.id_usuario
-          WHERE p.id_usuario = @id_usuario
-          ORDER BY p.fecha_borrado DESC, p.id_papelera DESC
+          FROM dbo.equipos e
+          LEFT JOIN dbo.usuarios u ON u.id_usuario = e.id_usuario_papelera
+          WHERE e.en_papelera = 1 AND e.id_usuario_papelera = @id_usuario
+          ORDER BY e.fecha_papelera DESC, e.id_equipo DESC
         `;
 
-      const r = await pool.request()
+      const r = await pool
+        .request()
         .input("id_usuario", sql.Int, req.user.id_usuario)
         .query(q);
 
@@ -74,6 +82,7 @@ router.get(
 );
 
 // POST /api/papelera/:id/restore  (solo jefe)
+// Restaura: solo saca de papelera (no toca activo)
 router.post(
   "/:id/restore",
   requireAuth,
@@ -85,22 +94,22 @@ router.post(
 
       const pool = await getPool();
 
-      const r = await pool.request()
+      const r = await pool
+        .request()
         .input("id", sql.Int, id)
-        .query(`SELECT TOP 1 * FROM equipos_papelera WHERE id_papelera=@id`);
+        .query(`
+          UPDATE dbo.equipos
+          SET
+            en_papelera = 0,
+            motivo_papelera = NULL,
+            fecha_papelera = NULL,
+            id_usuario_papelera = NULL
+          WHERE id_equipo = @id AND en_papelera = 1
+        `);
 
-      const row = r.recordset?.[0];
-      if (!row) return res.status(404).json({ ok: false, message: "No encontrado" });
-
-      // Reactivar equipo
-      await pool.request()
-        .input("id_equipo", sql.Int, row.id_equipo)
-        .query(`UPDATE equipos SET activo=1 WHERE id_equipo=@id_equipo`);
-
-      // Eliminar de papelera
-      await pool.request()
-        .input("id", sql.Int, id)
-        .query(`DELETE FROM equipos_papelera WHERE id_papelera=@id`);
+      if (r.rowsAffected?.[0] === 0) {
+        return res.status(404).json({ ok: false, message: "No encontrado / no estaba en papelera" });
+      }
 
       res.json({ ok: true });
     } catch (e) {

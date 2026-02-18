@@ -524,7 +524,7 @@ function downloadAllInventario() {
                       className="nav-btn inventario__sendBtn"
                       onClick={() => onReportFalla?.(it)}
                     >
-                      Enviar a bitácora
+                      Reporte de falla
                     </button>
 
                     <button className="btn" onClick={() => (onEdit ? onEdit(it) : openEdit(it))}>

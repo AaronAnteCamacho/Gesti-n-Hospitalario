@@ -7,10 +7,10 @@ const router = Router();
 /**
  * ROLES (solo 2):
  * - jefe: CRUD completo
- * - empleado: solo lectura (GET)
+ * - empleado: solo lectura (GET) + enviar a papelera
  */
 
-// GET /api/equipos  (jefe y empleado)
+// GET /api/equipos  (jefe y empleado) -> INVENTARIO (fuera de papelera)
 router.get(
   "/",
   requireAuth,
@@ -27,7 +27,7 @@ router.get(
         FROM equipos e
         INNER JOIN categorias_equipo c ON c.id_categoria = e.id_categoria
         INNER JOIN areas_hospital a ON a.id_area = e.id_area
-        WHERE e.activo = 1
+        WHERE e.en_papelera = 0
         ORDER BY e.id_equipo DESC
       `);
 
@@ -43,7 +43,7 @@ router.get(
 router.post(
   "/",
   requireAuth,
-  allowRoles("jefe"),
+  allowRoles("jefe", "empleado"),
   async (req, res) => {
     try {
       const {
@@ -77,10 +77,10 @@ router.post(
         .input("activo", sql.Bit, activo ? 1 : 0)
         .query(`
           INSERT INTO equipos
-          (numero_inventario, nombre_equipo, marca, modelo, numero_serie, ubicacion_especifica, id_categoria, id_area, activo)
+          (numero_inventario, nombre_equipo, marca, modelo, numero_serie, ubicacion_especifica, id_categoria, id_area, activo, en_papelera)
           OUTPUT INSERTED.id_equipo
           VALUES
-          (@numero_inventario, @nombre_equipo, @marca, @modelo, @numero_serie, @ubicacion_especifica, @id_categoria, @id_area, @activo)
+          (@numero_inventario, @nombre_equipo, @marca, @modelo, @numero_serie, @ubicacion_especifica, @id_categoria, @id_area, @activo, 0)
         `);
 
       return res.json({ ok: true, id_equipo: result.recordset[0].id_equipo });
@@ -95,7 +95,7 @@ router.post(
 router.put(
   "/:id",
   requireAuth,
-  allowRoles("jefe"),
+  allowRoles("jefe", "empleado"),
   async (req, res) => {
     try {
       const id = Number(req.params.id);
@@ -151,75 +151,7 @@ router.put(
 );
 
 // POST /api/equipos/:id/trash  (jefe y empleado)
-// Mueve a papelera (soft delete): guarda snapshot + motivo y desactiva equipo
-router.post(
-  "/:id/trash",
-  requireAuth,
-  allowRoles("jefe", "empleado"),
-  async (req, res) => {
-    try {
-      const id = Number(req.params.id);
-      const { motivo } = req.body;
-
-      if (!id) return res.status(400).json({ ok: false, message: "ID inválido" });
-      if (!motivo || !String(motivo).trim()) {
-        return res.status(400).json({ ok: false, message: "Motivo requerido" });
-      }
-
-      const pool = await getPool();
-
-      // Traer snapshot
-      const snap = await pool
-        .request()
-        .input("id", sql.Int, id)
-        .query(`
-          SELECT TOP 1
-            id_equipo, numero_inventario, nombre_equipo, marca, modelo, numero_serie,
-            ubicacion_especifica, id_categoria, id_area
-          FROM equipos
-          WHERE id_equipo=@id
-        `);
-
-      const row = snap.recordset[0];
-      if (!row) return res.status(404).json({ ok: false, message: "Equipo no encontrado" });
-
-      // Guardar en papelera
-      await pool
-        .request()
-        .input("id_equipo", sql.Int, row.id_equipo)
-        .input("numero_inventario", sql.VarChar(50), row.numero_inventario)
-        .input("nombre_equipo", sql.VarChar(150), row.nombre_equipo)
-        .input("marca", sql.VarChar(50), row.marca || null)
-        .input("modelo", sql.VarChar(50), row.modelo || null)
-        .input("numero_serie", sql.VarChar(50), row.numero_serie || null)
-        .input("ubicacion_especifica", sql.VarChar(100), row.ubicacion_especifica || null)
-        .input("id_categoria", sql.Int, row.id_categoria)
-        .input("id_area", sql.Int, row.id_area)
-        .input("motivo", sql.VarChar(500), String(motivo).trim())
-        .input("id_usuario", sql.Int, req.user?.id_usuario)
-        .query(`
-          INSERT INTO equipos_papelera
-          (id_equipo, numero_inventario, nombre_equipo, marca, modelo, numero_serie, ubicacion_especifica, id_categoria, id_area, motivo, id_usuario)
-          VALUES
-          (@id_equipo, @numero_inventario, @nombre_equipo, @marca, @modelo, @numero_serie, @ubicacion_especifica, @id_categoria, @id_area, @motivo, @id_usuario)
-        `);
-
-      // Soft delete
-      await pool
-        .request()
-        .input("id", sql.Int, id)
-        .query(`UPDATE equipos SET activo=0 WHERE id_equipo=@id`);
-
-      return res.json({ ok: true });
-    } catch (e) {
-      console.error(e);
-      return res.status(500).json({ ok: false, message: "Error enviando a papelera" });
-    }
-  }
-);
-
-// POST /api/equipos/:id/trash  (jefe y empleado)
-// Mueve a papelera (soft delete): guarda snapshot + motivo + usuario y pone activo=0
+// ✅ PAPELERA REAL: en_papelera=1 (NO depende de activo)
 router.post(
   "/:id/trash",
   requireAuth,
@@ -228,57 +160,35 @@ router.post(
     try {
       const id = Number(req.params.id);
       const motivo = String(req.body?.motivo || "").trim();
+
       if (!id) return res.status(400).json({ ok: false, message: "ID inválido" });
-      if (!motivo) return res.status(400).json({ ok: false, message: "Falta motivo" });
+      if (!motivo) return res.status(400).json({ ok: false, message: "Motivo requerido" });
 
       const pool = await getPool();
 
-      // 1) Leer snapshot
-      const snap = await pool
+      const r = await pool
         .request()
         .input("id", sql.Int, id)
-        .query(`
-          SELECT TOP 1
-            id_equipo, numero_inventario, nombre_equipo, marca, modelo, numero_serie,
-            ubicacion_especifica, id_categoria, id_area
-          FROM equipos
-          WHERE id_equipo=@id
-        `);
-
-      const row = snap.recordset?.[0];
-      if (!row) return res.status(404).json({ ok: false, message: "Equipo no encontrado" });
-
-      // 2) Insert en papelera
-      await pool
-        .request()
-        .input("id_equipo", sql.Int, row.id_equipo)
-        .input("numero_inventario", sql.VarChar(50), row.numero_inventario || null)
-        .input("nombre_equipo", sql.VarChar(150), row.nombre_equipo || null)
-        .input("marca", sql.VarChar(50), row.marca || null)
-        .input("modelo", sql.VarChar(50), row.modelo || null)
-        .input("numero_serie", sql.VarChar(50), row.numero_serie || null)
-        .input("ubicacion_especifica", sql.VarChar(100), row.ubicacion_especifica || null)
-        .input("id_categoria", sql.Int, row.id_categoria || null)
-        .input("id_area", sql.Int, row.id_area || null)
         .input("motivo", sql.VarChar(500), motivo)
         .input("id_usuario", sql.Int, req.user.id_usuario)
         .query(`
-          INSERT INTO equipos_papelera
-          (id_equipo, numero_inventario, nombre_equipo, marca, modelo, numero_serie, ubicacion_especifica, id_categoria, id_area, motivo, id_usuario)
-          VALUES
-          (@id_equipo, @numero_inventario, @nombre_equipo, @marca, @modelo, @numero_serie, @ubicacion_especifica, @id_categoria, @id_area, @motivo, @id_usuario)
+          UPDATE dbo.equipos
+          SET
+            en_papelera = 1,
+            motivo_papelera = @motivo,
+            fecha_papelera = GETDATE(),
+            id_usuario_papelera = @id_usuario
+          WHERE id_equipo = @id AND en_papelera = 0
         `);
 
-      // 3) Soft delete
-      await pool
-        .request()
-        .input("id", sql.Int, id)
-        .query(`UPDATE equipos SET activo=0 WHERE id_equipo=@id`);
+      if (r.rowsAffected?.[0] === 0) {
+        return res.status(400).json({ ok: false, message: "No se pudo enviar (ya estaba en papelera o no existe)" });
+      }
 
       return res.json({ ok: true });
     } catch (e) {
       console.error(e);
-      return res.status(500).json({ ok: false, message: "Error moviendo a papelera" });
+      return res.status(500).json({ ok: false, message: "Error enviando a papelera" });
     }
   }
 );
