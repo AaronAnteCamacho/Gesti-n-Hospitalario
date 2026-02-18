@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { apiFetch } from "../services/api.js";
 
 import imssLogo from "../assets/imss_icon_64.png";
@@ -15,6 +15,31 @@ export default function Login({ onLogin }) {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // ✅ Toast interno (no depende de App.jsx)
+  const [toasts, setToasts] = useState([]);
+  const timersRef = useRef(new Map());
+
+  const pushToast = (type, message, title = "Notificación", duration = 2600) => {
+    const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const toast = { id, type, title, message };
+    setToasts((prev) => [toast, ...prev].slice(0, 5)); // máx 5
+
+    // autoclose
+    const t = setTimeout(() => {
+      setToasts((prev) => prev.filter((x) => x.id !== id));
+      timersRef.current.delete(id);
+    }, duration);
+
+    timersRef.current.set(id, t);
+  };
+
+  const closeToast = (id) => {
+    const t = timersRef.current.get(id);
+    if (t) clearTimeout(t);
+    timersRef.current.delete(id);
+    setToasts((prev) => prev.filter((x) => x.id !== id));
+  };
+
   const title = useMemo(
     () => (recuperar ? "Recuperar acceso" : "Iniciar sesión"),
     [recuperar]
@@ -28,44 +53,53 @@ export default function Login({ onLogin }) {
     [recuperar]
   );
 
-  async function handleLogin(e) {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const r = await apiFetch("/api/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ correo, password }),
-      });
+async function handleLogin(e) {
+  e.preventDefault();
+  setLoading(true);
 
-      localStorage.setItem(
-        "auth",
-        JSON.stringify({
-          token: r.token,
-          usuario: r.usuario,
-        })
-      );
+  try {
+    const r = await apiFetch("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ correo, password }),
+    });
 
-      onLogin?.();
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setLoading(false);
-    }
+    localStorage.setItem(
+      "auth",
+      JSON.stringify({
+        token: r.token,
+        usuario: r.usuario,
+      })
+    );
+
+    // ✅ Opción A: mantener "loading" activo hasta que cambies a Home
+    pushToast("success", "Inicio de sesión exitoso.");
+
+    setTimeout(() => {
+      onLogin?.(); // aquí ya cambias a Home
+    }, 1200);
+  } catch (err) {
+    pushToast("error", err?.message || "Credenciales inválidas");
+    setLoading(false); // si falla, sí quitamos loading para que pueda intentar otra vez
   }
+}
+
+
 
   async function handleRecover(e) {
     e.preventDefault();
     setLoading(true);
+
     try {
       const r = await apiFetch("/api/auth/recover", {
         method: "POST",
         body: JSON.stringify({ correo: correoRec }),
       });
 
-      alert(r.message);
+      pushToast("success", r?.message || "Solicitud enviada.");
       setRecuperar(false);
+      setCorreoRec("");
     } catch (err) {
-      alert(err.message);
+      pushToast("error", err?.message || "No se pudo procesar la solicitud.");
     } finally {
       setLoading(false);
     }
@@ -76,6 +110,68 @@ export default function Login({ onLogin }) {
 
   return (
     <div style={styles.page(IMSS_GREEN, IMSS_GREEN_2)}>
+      {/* ✅ Toasts flotantes (arriba derecha) */}
+      <div className="toast-viewport top-right" aria-live="polite" aria-relevant="additions">
+        {toasts.map((t) => (
+          <div key={t.id} className={`toast toast--${t.type}`} role={t.type === "error" ? "alert" : "status"}>
+            <div className="toast__bar" />
+            <div className="toast__head">
+              <div className="toast__title">{t.title}</div>
+              <button className="toast__close" onClick={() => closeToast(t.id)} aria-label="Cerrar">
+                ×
+              </button>
+            </div>
+            <div className="toast__msg">{t.message}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ✅ estilos del toast (en este mismo archivo para que NO te falte nada) */}
+      <style>{`
+        .toast-viewport{
+          position: fixed;
+          z-index: 9999;
+          width: min(360px, calc(100vw - 24px));
+          display: grid;
+          gap: 10px;
+          padding: 12px;
+          pointer-events: none;
+        }
+        .toast-viewport.top-right{ top: 10px; right: 10px; }
+        .toast{
+          pointer-events: auto;
+          border-radius: 3px;
+          background: #fff;
+          box-shadow: 0 10px 26px rgba(0,0,0,.20);
+          overflow: hidden;
+          border: 1px solid rgba(0,0,0,.08);
+          transform-origin: top right;
+          animation: toastIn .12s ease-out;
+        }
+        @keyframes toastIn{
+          from{ transform: translateY(-6px); opacity: 0; }
+          to{ transform: translateY(0); opacity: 1; }
+        }
+        .toast__bar{ height: 10px; }
+        .toast__head{
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 10px 2px;
+          color: #fff;
+        }
+        .toast__title{ font-weight: 700; font-size: 12px; }
+        .toast__msg{ padding: 6px 10px 10px; font-size: 12px; color: #2b2b2b; }
+        .toast__close{
+          border: 0; background: transparent; color: rgba(255,255,255,.9);
+          font-size: 16px; cursor: pointer; line-height: 1;
+        }
+        .toast--success .toast__bar, .toast--success .toast__head{ background: #0b6b43; }
+        .toast--error .toast__bar, .toast--error .toast__head{ background: #c81e1e; }
+        .toast--info .toast__bar, .toast--info .toast__head{ background: #2563eb; }
+      `}</style>
+
+      {/* --- TU UI DEL LOGIN (igual que ya la traes) --- */}
       <div className="imss-shell">
         <aside className="imss-aside">
           <div className="imss-brand">

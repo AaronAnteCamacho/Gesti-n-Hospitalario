@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react'
 import Header from './components/Header.jsx'
 import Modal from './components/Modal.jsx'
 import { useLocalStorageState } from './components/useLocalStorageState.js'
-
+import { ToastProvider } from "./components/toast/ToastProvider.jsx";
 import Home from './views/Home.jsx'
 import Inventario from './views/Inventario.jsx'
 import Bitacora from './views/Bitacora.jsx'
@@ -376,6 +376,7 @@ export default function App() {
     }
 
     return (
+      <ToastProvider position="top-right" defaultDuration={2600}>
       <div className="bitacora-sheet">
         <div className="bitacora-head">
           <div className="bitacora-logos">
@@ -483,6 +484,7 @@ export default function App() {
           </button>
         </div>
       </div>
+      </ToastProvider>
     )
   }
 
