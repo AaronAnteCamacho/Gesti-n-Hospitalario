@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react'
+import React, { useMemo, useState, useEffect, useRef } from 'react'
 import Header from './components/Header.jsx'
 import Modal from './components/Modal.jsx'
 import { useLocalStorageState } from './components/useLocalStorageState.js'
@@ -45,6 +45,12 @@ export default function App() {
     bitacoraId: null,
     body: null
   })
+
+  // ✅ Notificaciones (solo Jefe)
+  const [notifOpen, setNotifOpen] = useState(false)
+  const [notifications, setNotifications] = useState([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const seenNotifIdsRef = useRef(new Set())
 
 
   // TOAST (GLOBAL y MODAL-SCOPE)
@@ -126,6 +132,68 @@ export default function App() {
     loadCatalogos().catch((e) => console.error("ERROR loadCatalogos:", e))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth])
+
+  // ✅ Cerrar panel de notificaciones al clickear fuera
+  useEffect(() => {
+    function onDocClick() {
+      setNotifOpen(false)
+    }
+    document.addEventListener('click', onDocClick)
+    return () => document.removeEventListener('click', onDocClick)
+  }, [])
+
+  async function loadNotifications({ silentToasts = false } = {}) {
+    if (!auth || auth.rol !== 'jefe') return
+    try {
+      const r = await apiFetch('/api/notificaciones?unread=1&limit=30')
+      const list = r.data || []
+      setNotifications(list)
+      setUnreadCount(list.length)
+
+      if (!silentToasts) {
+        // Mostrar toast solo para las nuevas
+        for (const n of list.slice().reverse()) {
+          if (!seenNotifIdsRef.current.has(n.id_notificacion)) {
+            seenNotifIdsRef.current.add(n.id_notificacion)
+            pushToast('info', n.mensaje, { title: 'Notificación' })
+          }
+        }
+      } else {
+        // En carga silenciosa, solo marcar como vistas para evitar spam inicial
+        for (const n of list) seenNotifIdsRef.current.add(n.id_notificacion)
+      }
+    } catch (e) {
+      // no rompemos UI
+      console.warn('No se pudieron cargar notificaciones:', e?.message || e)
+    }
+  }
+
+  // ✅ polling (solo jefe)
+  useEffect(() => {
+    if (!auth || auth.rol !== 'jefe') return
+    loadNotifications({ silentToasts: true })
+    const t = window.setInterval(() => loadNotifications({ silentToasts: false }), 8000)
+    return () => window.clearInterval(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth])
+
+  async function markNotifRead(id) {
+    try {
+      await apiFetch(`/api/notificaciones/${id}/read`, { method: 'PATCH' })
+      await loadNotifications({ silentToasts: true })
+    } catch (e) {
+      pushToast('error', e?.message || 'No se pudo marcar como leída')
+    }
+  }
+
+  async function markAllNotifsRead() {
+    try {
+      await apiFetch('/api/notificaciones/read-all', { method: 'PATCH' })
+      await loadNotifications({ silentToasts: true })
+    } catch (e) {
+      pushToast('error', e?.message || 'No se pudo marcar todo')
+    }
+  }
 
   useEffect(() => {
     if (bitacoras.length === 0) {
@@ -1117,6 +1185,12 @@ export default function App() {
         view={view}
         setView={setView}
         auth={auth}
+        notifications={notifications}
+        unreadCount={unreadCount}
+        notifOpen={notifOpen}
+        onToggleNotifs={() => setNotifOpen((v) => !v)}
+        onMarkNotifRead={markNotifRead}
+        onMarkAllNotifsRead={markAllNotifsRead}
         onTrashClick={() => setView('papelera')}
         onAddClick={() => {
           setView('inventario')

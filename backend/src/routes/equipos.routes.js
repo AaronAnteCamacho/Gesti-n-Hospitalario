@@ -4,6 +4,25 @@ import { requireAuth, allowRoles } from "../middlewares/auth.js";
 
 const router = Router();
 
+async function crearNotificacion(pool, { tipo, accion, mensaje, id_usuario_origen, id_equipo = null }) {
+  try {
+    await pool
+      .request()
+      .input("tipo", sql.VarChar(30), tipo)
+      .input("accion", sql.VarChar(30), accion)
+      .input("mensaje", sql.VarChar(300), mensaje)
+      .input("id_usuario_origen", sql.Int, id_usuario_origen)
+      .input("id_equipo", sql.Int, id_equipo)
+      .query(`
+        INSERT INTO notificaciones (tipo, accion, mensaje, id_usuario_origen, id_equipo, leida)
+        VALUES (@tipo, @accion, @mensaje, @id_usuario_origen, @id_equipo, 0)
+      `);
+  } catch (e) {
+    // No rompemos la acción principal si falla notificación
+    console.warn("No se pudo crear notificación:", e?.message || e);
+  }
+}
+
 // GET /api/equipos  (jefe y empleado) -> fuera de papelera
 router.get(
   "/",
@@ -88,6 +107,14 @@ router.post(
           (@numero_inventario, @nombre_equipo, @marca, @modelo, @numero_serie, @ubicacion_especifica, @id_categoria, @id_area, @activo, 0)
         `);
 
+      await crearNotificacion(pool, {
+        tipo: "equipos",
+        accion: "agregado",
+        mensaje: `Se agregó equipo: ${numero_inventario} · ${nombre_equipo} (por ${req.user.nombre})`,
+        id_usuario_origen: req.user.id_usuario,
+        id_equipo: result.recordset[0].id_equipo,
+      });
+
       return res.json({ ok: true, data: { id_equipo: result.recordset[0].id_equipo } });
     } catch (e) {
       console.error(e);
@@ -164,6 +191,14 @@ router.put(
           WHERE id_equipo=@id
         `);
 
+      await crearNotificacion(pool, {
+        tipo: "equipos",
+        accion: "editado",
+        mensaje: `Se editó equipo: ${numero_inventario} · ${nombre_equipo} (por ${req.user.nombre})`,
+        id_usuario_origen: req.user.id_usuario,
+        id_equipo: id,
+      });
+
       return res.json({ ok: true });
     } catch (e) {
       console.error(e);
@@ -187,6 +222,14 @@ router.post(
 
       const pool = await getPool();
 
+      const info = await pool
+        .request()
+        .input("id", sql.Int, id)
+        .query(`SELECT TOP 1 numero_inventario, nombre_equipo FROM equipos WHERE id_equipo = @id`);
+
+      const ni = info.recordset?.[0]?.numero_inventario || `ID ${id}`;
+      const ne = info.recordset?.[0]?.nombre_equipo || "";
+
       const r = await pool
         .request()
         .input("id", sql.Int, id)
@@ -205,6 +248,14 @@ router.post(
       if (r.rowsAffected?.[0] === 0) {
         return res.status(400).json({ ok: false, message: "No se pudo enviar (ya estaba en papelera o no existe)" });
       }
+
+      await crearNotificacion(pool, {
+        tipo: "equipos",
+        accion: "borrado",
+        mensaje: `Se envió a papelera: ${ni}${ne ? ` · ${ne}` : ""} (por ${req.user.nombre})`,
+        id_usuario_origen: req.user.id_usuario,
+        id_equipo: id,
+      });
 
       return res.json({ ok: true });
     } catch (e) {
