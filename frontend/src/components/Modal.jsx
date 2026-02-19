@@ -2,7 +2,10 @@ import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
 import "../styles/Modal.css";
 
-export default function Modal({ open, title, children, onClose }) {
+// ✅ toasts (opcional):
+// - toasts: [{ id, type: "success"|"error"|"info", title, message }]
+// - onToastClose: (id) => void
+export default function Modal({ open, title, children, onClose, toasts = [], onToastClose }) {
   useEffect(() => {
     function onKey(e) {
       if (e.key === "Escape") onClose?.();
@@ -17,8 +20,8 @@ export default function Modal({ open, title, children, onClose }) {
     <div
       className="modal-back"
       style={{
-        display: "flex",      // <-- fuerza visible aunque algún CSS ponga display:none
-        zIndex: 999999,       // <-- súper arriba
+        display: "flex",
+        zIndex: 999999,
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose?.();
@@ -28,6 +31,28 @@ export default function Modal({ open, title, children, onClose }) {
       aria-label={title || "Modal"}
     >
       <div className="modal">
+        {/* ✅ TOASTS dentro del modal */}
+        {Array.isArray(toasts) && toasts.length > 0 && (
+          <div className="toastHost toastHost--modal" aria-live="polite" aria-atomic="true">
+            {toasts.map((t) => (
+              <div key={t.id} className={`toast toast--${t.type || "info"}`}>
+                <div className="toast__top">
+                  <div className="toast__title">{t.title || "Notificación"}</div>
+                  <button
+                    type="button"
+                    className="toast__close"
+                    onClick={() => onToastClose?.(t.id)}
+                    aria-label="Cerrar"
+                  >
+                    ×
+                  </button>
+                </div>
+                {t.message ? <div className="toast__msg">{t.message}</div> : null}
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="modal__top">
           <h3 className="modal__title">{title}</h3>
           <button type="button" className="modal__closeBtn" onClick={onClose}>

@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react'
 import Header from './components/Header.jsx'
 import Modal from './components/Modal.jsx'
 import { useLocalStorageState } from './components/useLocalStorageState.js'
-import { ToastProvider } from "./components/toast/ToastProvider.jsx";
+
 import Home from './views/Home.jsx'
 import Inventario from './views/Inventario.jsx'
 import Bitacora from './views/Bitacora.jsx'
@@ -45,6 +45,53 @@ export default function App() {
     bitacoraId: null,
     body: null
   })
+
+
+  // TOAST (GLOBAL y MODAL-SCOPE)
+  const [toasts, setToasts] = useState([])
+
+  function closeToast(id) {
+    setToasts((prev) => prev.filter((t) => t.id !== id))
+  }
+
+  function pushToast(type, message, opts = {}) {
+    const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    const title =
+      opts.title ||
+      (type === 'success' ? 'Notificación' : type === 'error' ? 'Notificación' : 'Notificación')
+
+    const duration = typeof opts.duration === 'number'
+      ? opts.duration
+      : (type === 'error' ? 3500 : 2200)
+
+    const t = { id, type, title, message, duration }
+    setToasts((prev) => [...prev, t])
+
+    window.setTimeout(() => closeToast(id), duration)
+    return id
+  }
+
+  function ToastViewport({ scope = "fixed" }) {
+    // scope: "fixed" (arriba-derecha global) | "modal" (dentro del modal)
+    return (
+      <div className={`toast-viewport ${scope === "modal" ? "toast-viewport--modal" : "toast-viewport--fixed"}`} aria-live="polite" aria-relevant="additions">
+        {toasts.map((t) => (
+          <div key={t.id} className={`toast toast--${t.type}`} role={t.type === "error" ? "alert" : "status"}>
+            <div className="toast__bar" />
+            <div className="toast__head">
+              <div className="toast__title">{t.title}</div>
+              <button className="toast__close" onClick={() => closeToast(t.id)} aria-label="Cerrar">
+                ×
+              </button>
+            </div>
+            <div className="toast__msg">{t.message}</div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  
 
   function openModal(title, body) {
     console.log("ABRIENDO MODAL ✅")
@@ -146,17 +193,30 @@ export default function App() {
         onSubmit={async (e) => {
           e.preventDefault()
           try {
-            if (!String(draft.numero_inventario || "").trim()) return alert("Falta número de inventario")
-            if (!String(draft.nombre_equipo || "").trim()) return alert("Falta nombre del equipo")
-            if (!draft.id_categoria) return alert("Selecciona categoría")
-            if (!draft.id_area) return alert("Selecciona área")
+            const inv = String(draft.numero_inventario || "").trim()
+            const nom = String(draft.nombre_equipo || "").trim()
+            const ser = String(draft.numero_serie || "").trim()
+
+            if (!inv) return pushToast("error", "El número de inventario es obligatorio.")
+            if (!nom) return pushToast("error", "El nombre del equipo es obligatorio.")
+            if (!ser) return pushToast("error", "El número de serie es obligatorio.")
+            if (!draft.id_categoria) return pushToast("error", "Selecciona una categoría.")
+            if (!draft.id_area) return pushToast("error", "Selecciona un área.")
+
+            // Duplicado en FRONT (solo al agregar, para respuesta inmediata)
+            if (!isEdit) {
+              const exists = (inventario || []).some((x) =>
+                String(x?.numero_inventario || "").trim().toLowerCase() === inv.toLowerCase()
+              )
+              if (exists) return pushToast("error", `El No. inventario "${inv}" ya existe.`)
+            }
 
             const body = {
-              numero_inventario: String(draft.numero_inventario).trim(),
-              nombre_equipo: String(draft.nombre_equipo).trim(),
+              numero_inventario: inv,
+              nombre_equipo: nom,
               marca: String(draft.marca || "").trim(),
               modelo: String(draft.modelo || "").trim(),
-              numero_serie: String(draft.numero_serie || "").trim(),
+              numero_serie: ser,
               ubicacion_especifica: String(draft.ubicacion_especifica || "").trim(),
               id_categoria: Number(draft.id_categoria),
               id_area: Number(draft.id_area),
@@ -177,6 +237,7 @@ export default function App() {
             }
 
             await loadInventario()
+
             if (typeof opts.afterSave === 'function') {
               const idFromResp = resp?.data?.id_equipo
               const saved = {
@@ -185,10 +246,27 @@ export default function App() {
               }
               try { await opts.afterSave(saved) } catch {}
             }
+
             closeModal()
-            alert("Guardado.")
+            pushToast("success", isEdit ? "Equipo actualizado." : "Equipo agregado.")
           } catch (err) {
-            alert(err.message)
+            const msg = String(err?.message || "Error al guardar")
+            const low = msg.toLowerCase()
+
+            const isDuplicate =
+              low.includes("duplicate") ||
+              low.includes("duplic") ||
+              low.includes("unique") ||
+              low.includes("constraint") ||
+              low.includes("violat") ||
+              low.includes("ya existe")
+
+            if (isDuplicate) {
+              const inv = String(draft.numero_inventario || "").trim()
+              pushToast("error", `El No. inventario "${inv}" ya existe.`)
+            } else {
+              pushToast("error", msg)
+            }
           }
         }}
       >
@@ -348,10 +426,11 @@ export default function App() {
       observaciones: "",
     })
 
-    const fmt = (v) => (v === null || v === undefined || String(v).trim() === "" ? "—" : String(v))
     const fecha = isoDate()
 
-    const setRadio = (group, value) => {
+    const fmt = (v) => String(v ?? "").trim() || "—"
+
+    function setRadio(group, value) {
       if (group === "func") {
         setFallo((p) => ({
           ...p,
@@ -376,7 +455,6 @@ export default function App() {
     }
 
     return (
-      <ToastProvider position="top-right" defaultDuration={2600}>
       <div className="bitacora-sheet">
         <div className="bitacora-head">
           <div className="bitacora-logos">
@@ -474,9 +552,9 @@ export default function App() {
           <button
             className="btn"
             onClick={() => {
-              if (!fallo.funcionamiento_correcto && !fallo.funcionamiento_incorrecto) return alert("Selecciona el funcionamiento")
-              if (!fallo.sensores_correcto && !fallo.sensores_incorrecto) return alert("Selecciona sensores")
-              if (!fallo.requiere_reparacion_si && !fallo.requiere_reparacion_no) return alert("Indica si requiere reparación")
+              if (!fallo.funcionamiento_correcto && !fallo.funcionamiento_incorrecto) return pushToast("error", "Selecciona el funcionamiento")
+              if (!fallo.sensores_correcto && !fallo.sensores_incorrecto) return pushToast("error", "Selecciona sensores")
+              if (!fallo.requiere_reparacion_si && !fallo.requiere_reparacion_no) return pushToast("error", "Indica si requiere reparación")
               onSave(fallo)
             }}
           >
@@ -484,7 +562,6 @@ export default function App() {
           </button>
         </div>
       </div>
-      </ToastProvider>
     )
   }
 
@@ -499,7 +576,7 @@ export default function App() {
           addToPendientes(eq, fallo)
           closeModal()
           setView('bitacora')
-          alert('Falla registrada. Se agregó a Bitácoras y Pendientes.')
+          pushToast('success', 'Falla registrada. Se agregó a Bitácoras y Pendientes.')
         }}
       />
     ))
@@ -513,12 +590,12 @@ export default function App() {
       prefill,
       afterSave: (saved) => {
         if (saved) openReportFallaModal(saved)
-        else alert('Equipo guardado, pero no se pudo abrir el reporte. Recarga e intenta nuevamente.')
+        else pushToast('error', 'Equipo guardado, pero no se pudo abrir el reporte. Recarga e intenta nuevamente.')
       },
     })
   }
 
-  // ✅ AQUI SOLO CAMBIÉ: al enviar a papelera, te manda a la vista papelera
+  //  Papelera
   function trashInventario(item) {
     if (!item?.id_equipo) return
     let motivo = ""
@@ -528,7 +605,8 @@ export default function App() {
         onSubmit={async (e) => {
           e.preventDefault()
           motivo = String(motivo || '').trim()
-          if (!motivo) return alert('Escribe el motivo')
+          if (!motivo) return pushToast('error', 'Escribe el motivo')
+
           try {
             await apiFetch(`/api/equipos/${item.id_equipo}/trash`, {
               method: 'POST',
@@ -536,9 +614,9 @@ export default function App() {
             })
             await loadInventario()
             closeModal()
-            alert('Enviado a papelera.')
+            pushToast('success', 'Enviado a papelera.')
           } catch (err) {
-            alert(err.message)
+            pushToast('error', err?.message || 'Error al enviar a papelera')
           }
         }}
       >
@@ -584,7 +662,7 @@ export default function App() {
           inventario={inventario}
           areas={areas}
           categorias={categorias}
-          onAdd={() => { console.log("onAdd en App ✅"); upsertInventario(null) }}
+          onAdd={() => { console.log("onAdd en App "); upsertInventario(null) }}
           onEdit={(it) => upsertInventario(it)}
           onTrash={(it) => trashInventario(it)}
           onReportFalla={(it) => openReportFallaModal(it)}
@@ -621,6 +699,64 @@ export default function App() {
 
   return (
     <>
+      {/*CSS del toast (estilo notificación) */}
+      <style>{`
+        .toast-viewport{
+          width: min(360px, calc(100vw - 24px));
+          display: grid;
+          gap: 10px;
+          padding: 12px;
+          pointer-events: none;
+          z-index: 9999;
+        }
+        .toast-viewport--fixed{
+          position: fixed;
+          top: 10px;
+          right: 10px;
+        }
+        /* Cuando el modal está abierto, lo “anclamos” dentro del modal */
+        .toast-viewport--modal{
+          position: absolute;
+          top: 10px;
+          right: 10px;
+        }
+
+        .toast{
+          pointer-events: auto;
+          border-radius: 3px;
+          background: #fff;
+          box-shadow: 0 10px 26px rgba(0,0,0,.20);
+          overflow: hidden;
+          border: 1px solid rgba(0,0,0,.08);
+          transform-origin: top right;
+          animation: toastIn .12s ease-out;
+        }
+        @keyframes toastIn{
+          from{ transform: translateY(-6px); opacity: 0; }
+          to{ transform: translateY(0); opacity: 1; }
+        }
+        .toast__bar{ height: 10px; }
+        .toast__head{
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 10px 2px;
+          color: #fff;
+        }
+        .toast__title{ font-weight: 700; font-size: 12px; }
+        .toast__msg{ padding: 6px 10px 10px; font-size: 12px; color: #2b2b2b; }
+        .toast__close{
+          border: 0; background: transparent; color: rgba(255,255,255,.9);
+          font-size: 16px; cursor: pointer; line-height: 1;
+        }
+        .toast--success .toast__bar, .toast--success .toast__head{ background: #0b6b43; }
+        .toast--error .toast__bar, .toast--error .toast__head{ background: #c81e1e; }
+        .toast--info .toast__bar, .toast--info .toast__head{ background: #2563eb; }
+      `}</style>
+
+      {/*Cuando NO hay modal: toast global arriba a la derecha */}
+      {!modal.open && <ToastViewport scope="fixed" />}
+
       <Header
         view={view}
         setView={setView}
@@ -638,6 +774,9 @@ export default function App() {
       </main>
 
       <Modal open={modal.open} title={modal.title} onClose={closeModal}>
+        {/*Cuando hay modal: toast DENTRO del modal*/}
+        {modal.open && <ToastViewport scope="modal" />}
+
         {modal.kind === 'bitacora'
           ? <div />
           : modal.body}

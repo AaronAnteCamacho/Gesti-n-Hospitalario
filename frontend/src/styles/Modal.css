@@ -120,3 +120,80 @@
 .modal__body input::-webkit-scrollbar{
   height: 6px;
 }
+
+
+/* ✅ Para poder posicionar el toast "dentro" */
+.modal{
+  position: relative; /* clave */
+}
+
+/* ✅ Host del toast dentro del modal (arriba a la derecha) */
+.toastHost{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toastHost--modal{
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  width: min(420px, calc(100% - 24px));
+  pointer-events: none; /* no estorba al modal */
+}
+
+/* Cada toast sí se puede clickear */
+.toast{
+  pointer-events: auto;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 14px 40px rgba(0,0,0,.18);
+  background: #fff;
+  border: 1px solid rgba(0,0,0,.08);
+}
+
+/* barra de color arriba (tipo tu ejemplo) */
+.toast__top{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  color: #fff;
+  font-weight: 800;
+}
+
+.toast__title{
+  font-size: 13px;
+}
+
+.toast__close{
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: .9;
+}
+
+.toast__close:hover{ opacity: 1; }
+
+.toast__msg{
+  padding: 10px 12px;
+  font-size: 13px;
+  color: rgba(0,0,0,.72);
+}
+
+/* ✅ Variantes */
+.toast--success .toast__top{
+  background: linear-gradient(90deg, rgba(6,95,70,.95), rgba(4,120,87,.85));
+}
+
+.toast--error .toast__top{
+  background: linear-gradient(90deg, rgba(185,28,28,.95), rgba(127,29,29,.85));
+}
+
+.toast--info .toast__top{
+  background: linear-gradient(90deg, rgba(30,64,175,.95), rgba(37,99,235,.85));
+}

@@ -4,13 +4,7 @@ import { requireAuth, allowRoles } from "../middlewares/auth.js";
 
 const router = Router();
 
-/**
- * ROLES (solo 2):
- * - jefe: CRUD completo
- * - empleado: solo lectura (GET) + enviar a papelera
- */
-
-// GET /api/equipos  (jefe y empleado) -> INVENTARIO (fuera de papelera)
+// GET /api/equipos  (jefe y empleado) -> fuera de papelera
 router.get(
   "/",
   requireAuth,
@@ -39,7 +33,7 @@ router.get(
   }
 );
 
-// POST /api/equipos  (solo jefe)
+// POST /api/equipos  (jefe/empleado según tu sistema)
 router.post(
   "/",
   requireAuth,
@@ -58,11 +52,22 @@ router.post(
         activo = 1,
       } = req.body;
 
-      if (!numero_inventario || !nombre_equipo || !id_categoria || !id_area) {
+      // ✅ obligatorios (lo que pediste)
+      if (!numero_inventario || !nombre_equipo || !numero_serie || !id_categoria || !id_area) {
         return res.status(400).json({ ok: false, message: "Faltan campos obligatorios" });
       }
 
       const pool = await getPool();
+
+      // ✅ duplicado inventario en BD
+      const dup = await pool
+        .request()
+        .input("numero_inventario", sql.VarChar(50), numero_inventario)
+        .query(`SELECT TOP 1 id_equipo FROM equipos WHERE numero_inventario = @numero_inventario`);
+
+      if (dup.recordset?.length) {
+        return res.status(409).json({ ok: false, message: "El No. inventario ya existe" });
+      }
 
       const result = await pool
         .request()
@@ -70,7 +75,7 @@ router.post(
         .input("nombre_equipo", sql.VarChar(150), nombre_equipo)
         .input("marca", sql.VarChar(50), marca || null)
         .input("modelo", sql.VarChar(50), modelo || null)
-        .input("numero_serie", sql.VarChar(50), numero_serie || null)
+        .input("numero_serie", sql.VarChar(50), numero_serie)
         .input("ubicacion_especifica", sql.VarChar(100), ubicacion_especifica || null)
         .input("id_categoria", sql.Int, id_categoria)
         .input("id_area", sql.Int, id_area)
@@ -83,7 +88,7 @@ router.post(
           (@numero_inventario, @nombre_equipo, @marca, @modelo, @numero_serie, @ubicacion_especifica, @id_categoria, @id_area, @activo, 0)
         `);
 
-      return res.json({ ok: true, id_equipo: result.recordset[0].id_equipo });
+      return res.json({ ok: true, data: { id_equipo: result.recordset[0].id_equipo } });
     } catch (e) {
       console.error(e);
       return res.status(500).json({ ok: false, message: "Error creando equipo" });
@@ -91,7 +96,7 @@ router.post(
   }
 );
 
-// PUT /api/equipos/:id  (solo jefe)
+// PUT /api/equipos/:id  (jefe/empleado según tu sistema)
 router.put(
   "/:id",
   requireAuth,
@@ -111,11 +116,28 @@ router.put(
         activo = 1,
       } = req.body;
 
-      if (!id || !numero_inventario || !nombre_equipo || !id_categoria || !id_area) {
+      // ✅ obligatorios (lo que pediste)
+      if (!id || !numero_inventario || !nombre_equipo || !numero_serie || !id_categoria || !id_area) {
         return res.status(400).json({ ok: false, message: "Faltan campos obligatorios" });
       }
 
       const pool = await getPool();
+
+      // ✅ duplicado inventario en BD, ignorando el mismo id
+      const dup = await pool.request()
+        .input("numero_inventario", sql.VarChar(50), numero_inventario)
+        .input("id", sql.Int, id)
+        .query(`
+          SELECT TOP 1 id_equipo
+          FROM equipos
+          WHERE numero_inventario = @numero_inventario
+            AND id_equipo <> @id
+        `);
+
+      if (dup.recordset?.length) {
+        return res.status(409).json({ ok: false, message: "El No. inventario ya existe" });
+      }
+
       await pool
         .request()
         .input("id", sql.Int, id)
@@ -123,7 +145,7 @@ router.put(
         .input("nombre_equipo", sql.VarChar(150), nombre_equipo)
         .input("marca", sql.VarChar(50), marca || null)
         .input("modelo", sql.VarChar(50), modelo || null)
-        .input("numero_serie", sql.VarChar(50), numero_serie || null)
+        .input("numero_serie", sql.VarChar(50), numero_serie)
         .input("ubicacion_especifica", sql.VarChar(100), ubicacion_especifica || null)
         .input("id_categoria", sql.Int, id_categoria)
         .input("id_area", sql.Int, id_area)
@@ -151,7 +173,6 @@ router.put(
 );
 
 // POST /api/equipos/:id/trash  (jefe y empleado)
-// ✅ PAPELERA REAL: en_papelera=1 (NO depende de activo)
 router.post(
   "/:id/trash",
   requireAuth,
