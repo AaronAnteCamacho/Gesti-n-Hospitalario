@@ -643,6 +643,202 @@ export default function App() {
     openBitacoraModal(b.id)
   }
 
+  function downloadBitacora(b) {
+  if (!b) return;
+
+  const tipo = (prompt('¿Descargar como PDF o Excel? (pdf / excel)') || '').toLowerCase();
+  const safe = (v) =>
+    String(v ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;");
+
+  const rows = (b.items?.length ? b.items : []);
+
+  const fecha = b.fecha || isoDate();
+  const nombre = (b.nombre || 'BITÁCORA DE REVISIÓN').toUpperCase();
+
+  if (tipo === "excel") {
+    // Cabecera + 2 filas de encabezado (tipo tu Excel)
+    const out = [
+      ['HOSPITAL DE ESPECIALIDADES "DR. ANTONIO GONZALEZ GUEVARA"'],
+      ['AREA DE MANTENIMIENTO'],
+      [nombre],
+      ['FECHA: ' + fecha],
+      [''],
+      [
+        "No. DE INVENTARIO",
+        "EQUIPO MÉDICO",
+        "MARCA",
+        "MODELO",
+        "NÚMERO DE SERIE",
+        "UBICACIÓN ESPECÍFICA",
+        "FUNCIONAMIENTO (CORRECTO)",
+        "FUNCIONAMIENTO (INCORRECTO)",
+        "SENSORES (CORRECTO)",
+        "SENSORES (INCORRECTO)",
+        "REQUIERE REPARACIÓN (SI)",
+        "REQUIERE REPARACIÓN (NO)",
+        "FECHA",
+        "OBSERVACIONES",
+      ],
+      ...rows.map((r) => [
+        r.numero_inventario || r.inventario || r.inv || "",
+        r.equipo || r.nombre_equipo || r.nombre || "",
+        r.marca || "",
+        r.modelo || "",
+        r.numero_serie || r.serie || "",
+        r.ubicacion_especifica || r.ubicacion || "",
+        r.funcionamiento_correcto ? "X" : "",
+        r.funcionamiento_incorrecto ? "X" : "",
+        r.sensores_correcto ? "X" : "",
+        r.sensores_incorrecto ? "X" : "",
+        r.requiere_reparacion_si ? "X" : "",
+        r.requiere_reparacion_no ? "X" : "",
+        fecha,
+        r.observaciones || "",
+      ]),
+    ];
+
+    const csv = out
+      .map((rr) => rr.map((x) => `"${String(x ?? "").replaceAll('"', '""')}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bitacora_${nombre.replaceAll(" ", "_")}_${fecha}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    return;
+  }
+
+  if (tipo === "pdf") {
+    const w = window.open("", "_blank");
+    if (!w) return alert("Permite ventanas emergentes para imprimir.");
+
+    const tableRows = rows
+      .map(
+        (r) => `
+        <tr>
+          <td>${safe(r.numero_inventario || r.inventario || r.inv)}</td>
+          <td>${safe(r.equipo || r.nombre_equipo || r.nombre)}</td>
+          <td>${safe(r.marca)}</td>
+          <td>${safe(r.modelo)}</td>
+          <td>${safe(r.numero_serie || r.serie)}</td>
+          <td>${safe(r.ubicacion_especifica || r.ubicacion)}</td>
+          <td class="c">${r.funcionamiento_correcto ? "X" : ""}</td>
+          <td class="c">${r.funcionamiento_incorrecto ? "X" : ""}</td>
+          <td class="c">${r.sensores_correcto ? "X" : ""}</td>
+          <td class="c">${r.sensores_incorrecto ? "X" : ""}</td>
+          <td class="c">${r.requiere_reparacion_si ? "X" : ""}</td>
+          <td class="c">${r.requiere_reparacion_no ? "X" : ""}</td>
+          <td>${safe(fecha)}</td>
+          <td>${safe(r.observaciones || "")}</td>
+        </tr>`
+      )
+      .join("");
+
+    w.document.write(`
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>${safe(nombre)}</title>
+          <style>
+            body{font-family:Arial,Helvetica,sans-serif;padding:18px;}
+            .hdr{
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+}
+
+.hdr-logo{
+  width: 70px;
+  height: auto;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+/* Solo el logo de la izquierda */
+.hdr-logo-left{
+  width: 95px; /* ajusta: 85, 90, 100... */
+}
+
+.hdr-center{
+  flex: 1;
+  text-align: center;
+  padding: 0 12px;
+}
+            .t1{font-weight:800;font-size:14px;}
+            .t2{font-weight:800;font-size:13px;margin-top:3px;}
+            .t3{font-weight:900;font-size:14px;margin-top:6px;}
+            .meta{text-align:left;max-width:980px;margin:10px auto 0;font-size:12px;}
+            table{width:100%;border-collapse:collapse;font-size:11px;margin-top:12px;}
+            th,td{border:1px solid #333;padding:6px;vertical-align:top;}
+            th{background:#f2f2f2}
+            .c{text-align:center;font-weight:800}
+          </style>
+        </head>
+        <body>
+          <div class="hdr">
+  <img class="hdr-logo hdr-logo-left" src="${logoLeft}" alt="Logo izquierda" />
+
+  <div class="hdr-center">
+    <div class="t1">HOSPITAL DE ESPECIALIDADES "DR. ANTONIO GONZALEZ GUEVARA"</div>
+    <div class="t2">AREA DE MANTENIMIENTO</div>
+    <div class="t3">${safe(nombre)}</div>
+  </div>
+
+  <img class="hdr-logo" src="${logoRight}" alt="Logo derecha" />
+</div>
+          <div class="meta">
+            <div><b>Fecha:</b> ${safe(fecha)}</div>
+            <div><b>Nº de artículos:</b> ${rows.length}</div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th rowspan="2">No. de inventario</th>
+                <th rowspan="2">Equipo médico</th>
+                <th rowspan="2">Marca</th>
+                <th rowspan="2">Modelo</th>
+                <th rowspan="2">Número de serie</th>
+                <th rowspan="2">Ubicación específica</th>
+                <th colspan="2">Funcionamiento</th>
+                <th colspan="2">Sensores</th>
+                <th colspan="2">Requiere reparación</th>
+                <th rowspan="2">Fecha</th>
+                <th rowspan="2">Observaciones</th>
+              </tr>
+              <tr>
+                <th>Correcto</th><th>Incorrecto</th>
+                <th>Correcto</th><th>Incorrecto</th>
+                <th>Si</th><th>No</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRows || `<tr><td colspan="14">Sin registros para imprimir.</td></tr>`}
+            </tbody>
+          </table>
+
+          <script>
+            window.onload = () => window.print();
+          </script>
+        </body>
+      </html>
+    `);
+
+    w.document.close();
+    return;
+  }
+
+  alert('Escribe "pdf" o "excel".');
+}
+
+
   const content = useMemo(() => {
     if (view === 'home') {
       return (
@@ -672,7 +868,7 @@ export default function App() {
       )
     }
     if (view === 'bitacora') {
-      return <Bitacora bitacoras={bitacoras} onNew={createNewBitacora} onOpen={openBitacoraDetail} />
+      return <Bitacora bitacoras={bitacoras} onNew={createNewBitacora} onOpen={openBitacoraDetail} onDownload={downloadBitacora} />
     }
     if (view === 'perfil') {
       if (auth?.rol !== 'jefe') return <div className="card">No tienes permisos para ver usuarios.</div>
@@ -696,6 +892,166 @@ export default function App() {
       />
     )
   }
+
+
+
+  // ✅ Bitácora (vista completa dentro del modal, como en Hospital.zip)
+  function BitacoraSheet({ bitacoraId }) {
+      const b = bitacoras.find(x => x.id === bitacoraId)
+      if (!b) return <div>No se encontró la bitácora.</div>
+
+      const fmt = (v) => (v === null || v === undefined || String(v).trim() === '' ? '—' : String(v))
+
+      const updateRow = (idx, patch) => {
+        setBitacoras(prev => prev.map(bb => {
+          if (bb.id !== b.id) return bb
+          const items = (bb.items && bb.items.length) ? [...bb.items] : [{}]
+          const nextRow = { ...(items[idx] || {}), ...patch }
+          items[idx] = nextRow
+          return { ...bb, items }
+        }))
+      }
+
+      const rows = (b.items?.length ? b.items : [{}])
+
+      return (
+        <div className="bitacora-sheet">
+          <div className="bitacora-head">
+            <div className="bitacora-logos">
+              <img src={logoLeft} alt="Logo" />
+            </div>
+
+            <div className="bitacora-title">
+              <div className="t1">HOSPITAL DE ESPECIALIDADES "DR. ANTONIO GONZALEZ GUEVARA"</div>
+              <div className="t2">AREA DE MANTENIMIENTO</div>
+              <div className="t3">{(b.nombre || 'BITÁCORA DE REVISIÓN').toUpperCase()}</div>
+            </div>
+
+            <div className="bitacora-logos right">
+              <img src={logoRight} alt="Logo" />
+            </div>
+          </div>
+
+          <div className="small muted" style={{ marginTop: 8 }}>
+            Fecha: <strong>{fmt(b.fecha)}</strong> · Nº de artículos: <strong>{rows.length}</strong>
+          </div>
+
+          <div className="bitacora-table-wrap">
+            <table className="bitacora-table">
+              <thead>
+                <tr>
+                  <th rowSpan={2}>No. de inventario</th>
+                  <th rowSpan={2}>Equipo médico</th>
+                  <th rowSpan={2}>Marca</th>
+                  <th rowSpan={2}>Modelo</th>
+                  <th rowSpan={2}>Número de serie</th>
+                  <th rowSpan={2}>Ubicación específica</th>
+                  <th colSpan={2} style={{ textAlign: 'center' }}>Funcionamiento</th>
+                  <th colSpan={2} style={{ textAlign: 'center' }}>Sensores</th>
+                  <th colSpan={2} style={{ textAlign: 'center' }}>Requiere reparación</th>
+                  <th rowSpan={2}>Fecha</th>
+                  <th rowSpan={2}>Observaciones</th>
+                </tr>
+                <tr>
+                  <th className="center">Correcto</th>
+                  <th className="center">Incorrecto</th>
+                  <th className="center">Correcto</th>
+                  <th className="center">Incorrecto</th>
+                  <th className="center">Sí</th>
+                  <th className="center">No</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {rows.map((cur, idx) => {
+                  const row = cur || {}
+                  const name = (suffix) => `${b.id}-${idx}-${suffix}`
+
+                  return (
+                    <tr key={idx}>
+                      <td>{fmt(row.numero_inventario || row.inventario || row.inv)}</td>
+                      <td>{fmt(row.equipo || row.nombre_equipo || row.nombre)}</td>
+                      <td>{fmt(row.marca)}</td>
+                      <td>{fmt(row.modelo)}</td>
+                      <td>{fmt(row.numero_serie || row.serie)}</td>
+                      <td>{fmt(row.ubicacion_especifica || row.ubicacion)}</td>
+
+                      <td className="center">
+                        <input
+                          type="radio"
+                          name={name('func')}
+                          checked={!!row.funcionamiento_correcto}
+                          onChange={() => updateRow(idx, { funcionamiento_correcto: true, funcionamiento_incorrecto: false })}
+                        />
+                      </td>
+                      <td className="center">
+                        <input
+                          type="radio"
+                          name={name('func')}
+                          checked={!!row.funcionamiento_incorrecto}
+                          onChange={() => updateRow(idx, { funcionamiento_correcto: false, funcionamiento_incorrecto: true })}
+                        />
+                      </td>
+
+                      <td className="center">
+                        <input
+                          type="radio"
+                          name={name('sens')}
+                          checked={!!row.sensores_correcto}
+                          onChange={() => updateRow(idx, { sensores_correcto: true, sensores_incorrecto: false })}
+                        />
+                      </td>
+                      <td className="center">
+                        <input
+                          type="radio"
+                          name={name('sens')}
+                          checked={!!row.sensores_incorrecto}
+                          onChange={() => updateRow(idx, { sensores_correcto: false, sensores_incorrecto: true })}
+                        />
+                      </td>
+
+                      <td className="center">
+                        <input
+                          type="radio"
+                          name={name('rep')}
+                          checked={!!row.requiere_reparacion_si}
+                          onChange={() => updateRow(idx, { requiere_reparacion_si: true, requiere_reparacion_no: false })}
+                        />
+                      </td>
+                      <td className="center">
+                        <input
+                          type="radio"
+                          name={name('rep')}
+                          checked={!!row.requiere_reparacion_no}
+                          onChange={() => updateRow(idx, { requiere_reparacion_si: false, requiere_reparacion_no: true })}
+                        />
+                      </td>
+
+                      {/* ✅ Fecha: misma que fecha de creación de bitácora */}
+                      <td>{fmt(b.fecha)}</td>
+
+                      <td>
+                        {/* ✅ Observaciones editable */}
+                        <input
+                          className="bitacora-obs"
+                          value={row.observaciones || ''}
+                          onChange={(e) => updateRow(idx, { observaciones: e.target.value })}
+                          placeholder="Escribe observaciones..."
+                        />
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <div style={{ marginTop: 12, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button className="btn" onClick={() => window.print()}>Imprimir</button>
+          </div>
+        </div>
+      )
+    }
 
   return (
     <>
@@ -778,7 +1134,7 @@ export default function App() {
         {modal.open && <ToastViewport scope="modal" />}
 
         {modal.kind === 'bitacora'
-          ? <div />
+          ? <BitacoraSheet bitacoraId={modal.bitacoraId} />
           : modal.body}
       </Modal>
     </>
