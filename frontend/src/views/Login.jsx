@@ -63,13 +63,9 @@ async function handleLogin(e) {
       body: JSON.stringify({ correo, password }),
     });
 
-    localStorage.setItem(
-      "auth",
-      JSON.stringify({
-        token: r.token,
-        usuario: r.usuario,
-      })
-    );
+    localStorage.setItem("token", r.token);           // ✅ token separado
+    localStorage.setItem("auth", JSON.stringify(r.usuario));  // ✅ auth = usuario
+
 
     // ✅ Opción A: mantener "loading" activo hasta que cambies a Home
     pushToast("success", "Inicio de sesión exitoso.");
