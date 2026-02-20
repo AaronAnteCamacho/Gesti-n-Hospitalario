@@ -711,10 +711,42 @@ export default function App() {
     openBitacoraModal(b.id)
   }
 
-  function downloadBitacora(b) {
+  
+function downloadBitacora(b) {
   if (!b) return;
 
-  const tipo = (prompt('¿Descargar como PDF o Excel? (pdf / excel)') || '').toLowerCase();
+  // ✅ En lugar de prompt (texto), abrimos una ventana (Modal) con botones
+  openModal('Descargar bitácora', (
+    <div style={{ display: 'grid', gap: 12, minWidth: 280 }}>
+      <div className="small muted">Elige el formato de descarga:</div>
+
+      <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+        <button
+          type="button"
+          className="btn"
+          onClick={() => { closeModal(); downloadBitacoraFile(b, 'pdf'); }}
+        >
+          PDF
+        </button>
+        <button
+          type="button"
+          className="btn"
+          onClick={() => { closeModal(); downloadBitacoraFile(b, 'excel'); }}
+        >
+          Excel
+        </button>
+      </div>
+    </div>
+  ));
+}
+
+
+function downloadBitacoraFile(b, tipo) {
+  if (!b) return;
+
+  tipo = String(tipo || '').toLowerCase();
+  if (tipo !== 'pdf' && tipo !== 'excel') return;
+
   const safe = (v) =>
     String(v ?? "")
       .replaceAll("&", "&amp;")
@@ -725,8 +757,7 @@ export default function App() {
 
   const fecha = b.fecha || isoDate();
   const nombre = (b.nombre || 'BITÁCORA DE REVISIÓN').toUpperCase();
-
-  if (tipo === "excel") {
+if (tipo === "excel") {
     // Cabecera + 2 filas de encabezado (tipo tu Excel)
     const out = [
       ['HOSPITAL DE ESPECIALIDADES "DR. ANTONIO GONZALEZ GUEVARA"'],
@@ -902,9 +933,8 @@ export default function App() {
     w.document.close();
     return;
   }
-
-  alert('Escribe "pdf" o "excel".');
 }
+
 
 
   const content = useMemo(() => {
