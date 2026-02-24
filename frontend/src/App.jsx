@@ -1,7 +1,8 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react'
 import Header from './components/Header.jsx'
 import Modal from './components/Modal.jsx'
-import UserCenterModal from './components/UserCenterModal.jsx'
+import ProfileModal from './components/ProfileModal.jsx'
+import UsersModal from './components/UsersModal.jsx'
 import { useLocalStorageState } from './components/useLocalStorageState.js'
 
 import Home from './views/Home.jsx'
@@ -49,12 +50,31 @@ export default function App() {
 
   // ✅ Perfil / usuarios (modal al clickear avatar)
   const [userCenterOpen, setUserCenterOpen] = useState(false)
+  const [userCenterTab, setUserCenterTab] = useState('me')
 
   // ✅ Notificaciones (solo Jefe)
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
   const seenNotifIdsRef = useRef(new Set())
+  
+  //  Logout (cerrar sesión y regresar a login)
+  function handleLogout() {
+    try {
+      localStorage.removeItem('auth')
+      localStorage.removeItem('token')
+    } catch {}
+    setAuth(null)
+    setUserCenterOpen(false)
+    setNotifOpen(false)
+    setView('login')
+  }
+
+  //  Click avatar: abrir modal en la pestaña correcta
+  function handleAvatarClick(tab = 'me') {
+    setUserCenterTab(tab)
+    setUserCenterOpen(true)
+  }
 
 
   // TOAST (GLOBAL y MODAL-SCOPE)
@@ -81,25 +101,33 @@ export default function App() {
     return id
   }
 
-  function ToastViewport({ scope = "fixed" }) {
-    // scope: "fixed" (arriba-derecha global) | "modal" (dentro del modal)
-    return (
-      <div className={`toast-viewport ${scope === "modal" ? "toast-viewport--modal" : "toast-viewport--fixed"}`} aria-live="polite" aria-relevant="additions">
-        {toasts.map((t) => (
-          <div key={t.id} className={`toast toast--${t.type}`} role={t.type === "error" ? "alert" : "status"}>
-            <div className="toast__bar" />
-            <div className="toast__head">
-              <div className="toast__title">{t.title}</div>
-              <button className="toast__close" onClick={() => closeToast(t.id)} aria-label="Cerrar">
-                ×
-              </button>
-            </div>
-            <div className="toast__msg">{t.message}</div>
-          </div>
-        ))}
-      </div>
-    )
+    // API simple para usar el sistema de Toasts desde cualquier componente
+  const toast = {
+    success: (message, opts = {}) => pushToast('success', message, opts),
+    error: (message, opts = {}) => pushToast('error', message, opts),
+    info: (message, opts = {}) => pushToast('info', message, opts),
   }
+
+  function ToastViewport({ scope = "fixed" }) {
+  // scope: "fixed" (global) | "modal" (dentro del modal)
+  const scopeClass = scope === "modal" ? "toast-viewport--modal" : "toast-viewport--fixed";
+  return (
+    <div className={`toast-viewport top-right ${scopeClass}`} aria-live="polite" aria-relevant="additions">
+      {toasts.map((t) => (
+        <div key={t.id} className={`toast toast--${t.type}`} role={t.type === "error" ? "alert" : "status"}>
+          <div className="toast__bar" />
+          <div className="toast__head">
+            <div className="toast__title">{t.title}</div>
+            <button className="toast__close" onClick={() => closeToast(t.id)} aria-label="Cerrar">
+              ×
+            </button>
+          </div>
+          <div className="toast__msg">{t.message}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
   
 
@@ -1212,14 +1240,15 @@ if (tipo === "excel") {
         .toast--info .toast__bar, .toast--info .toast__head{ background: #2563eb; }
       `}</style>
 
-      {/*Cuando NO hay modal: toast global arriba a la derecha */}
-      {!modal.open && <ToastViewport scope="fixed" />}
+      {/* Solo global cuando NO hay ningún modal */}
+      {!modal.open && !userCenterOpen && <ToastViewport scope="fixed" />}
 
       <Header
         view={view}
         setView={setView}
         auth={auth}
-        onAvatarClick={() => setUserCenterOpen(true)}
+        onAvatarClick={handleAvatarClick}
+        onLogout={handleLogout}
         notifications={notifications}
         unreadCount={unreadCount}
         notifOpen={notifOpen}
@@ -1233,12 +1262,22 @@ if (tipo === "excel") {
         }}
       />
 
-      <UserCenterModal
-        open={userCenterOpen}
-        onClose={() => setUserCenterOpen(false)}
-        auth={auth}
-        onAuthUpdate={(next) => setAuth(next)}
-      />
+     <ProfileModal
+  open={userCenterOpen && userCenterTab === 'me'}
+  onClose={() => setUserCenterOpen(false)}
+  auth={auth}
+  onAuthUpdate={(next) => setAuth(next)}
+  toast={toast}
+  ToastViewport={ToastViewport}
+/>
+
+<UsersModal
+  open={userCenterOpen && userCenterTab === 'users'}
+  onClose={() => setUserCenterOpen(false)}
+  auth={auth}
+  toast={toast}
+  ToastViewport={ToastViewport}
+/>
 
       <main className="container">
         {content}

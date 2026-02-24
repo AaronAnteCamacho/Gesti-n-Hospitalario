@@ -197,3 +197,29 @@
 .toast--info .toast__top{
   background: linear-gradient(90deg, rgba(30,64,175,.95), rgba(37,99,235,.85));
 }
+
+
+.modal-closeIcon{
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-closeIcon:hover{
+  background: rgba(255,255,255,.12);
+}
+.modal-closeIcon:hover{
+  background: rgba(0,0,0,.12);
+}
+
+.modal-closeIcon img{
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  display: block;
+}

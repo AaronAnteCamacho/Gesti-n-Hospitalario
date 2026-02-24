@@ -6,7 +6,8 @@ function isValidEmail(v) {
   return /.+@.+\..+/.test(String(v || "").trim());
 }
 
-export default function UserCenterModal({ open, onClose, auth, onAuthUpdate }) {
+// ✅ startTab agregado
+export default function UserCenterModal({ open, onClose, auth, onAuthUpdate, startTab = "me" }) {
   const isJefe = auth?.rol === "jefe";
 
   const [tab, setTab] = useState("me"); // me | users
@@ -187,9 +188,7 @@ export default function UserCenterModal({ open, onClose, auth, onAuthUpdate }) {
   }
 
   async function deleteUser(u) {
-    const ok = confirm(
-      `¿Seguro que quieres eliminar a "${u?.nombre}" (${u?.correo})?`
-    );
+    const ok = confirm(`¿Seguro que quieres eliminar a "${u?.nombre}" (${u?.correo})?`);
     if (!ok) return;
     setULoading(true);
     try {
@@ -203,14 +202,18 @@ export default function UserCenterModal({ open, onClose, auth, onAuthUpdate }) {
     }
   }
 
-  // Cargar info al abrir
+  // ✅ Cargar info al abrir + abrir tab correcto
   useEffect(() => {
     if (!open) return;
-    setTab("me");
+
+    // si piden "users" pero no es jefe, cae a "me"
+    const nextTab = (startTab === "users" && isJefe) ? "users" : "me";
+    setTab(nextTab);
+
     loadMe().catch((e) => alert(e.message));
     if (isJefe) loadUsuarios().catch((e) => alert(e.message));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, startTab, isJefe]);
 
   const title = useMemo(() => {
     if (isJefe) return "Centro de usuario (Jefe)";
@@ -393,7 +396,6 @@ export default function UserCenterModal({ open, onClose, auth, onAuthUpdate }) {
             <table className="table">
               <thead>
                 <tr>
-                  {/* ✅ ID QUITADO */}
                   <th>Nombre</th>
                   <th>Correo</th>
                   <th>Rol</th>
@@ -404,7 +406,6 @@ export default function UserCenterModal({ open, onClose, auth, onAuthUpdate }) {
               <tbody>
                 {usuarios.map((u) => (
                   <tr key={u.id_usuario}>
-                    {/* ✅ ID QUITADO */}
                     <td>{u.nombre}</td>
                     <td>{u.correo}</td>
                     <td>{u.rol || "—"}</td>
@@ -422,7 +423,6 @@ export default function UserCenterModal({ open, onClose, auth, onAuthUpdate }) {
 
                 {usuarios.length === 0 && !uLoading && (
                   <tr>
-                    {/* antes era 6, ahora 5 */}
                     <td colSpan={5} className="muted">
                       No hay usuarios.
                     </td>

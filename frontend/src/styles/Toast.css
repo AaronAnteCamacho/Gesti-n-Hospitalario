@@ -67,3 +67,20 @@
 
 .toast--info .toast__bar,
 .toast--info .toast__head{ background: #2563eb; }   /* azul */
+
+
+/* ====== TOAST dentro del MODAL (no fixed) ====== */
+.toast-viewport--modal{
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 9999999;
+}
+
+/* el global se queda fixed */
+.toast-viewport--fixed{
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 9999;
+}

@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
 import "../styles/Modal.css";
+import closeIcon from "../assets/close_icon.ico"; 
 
 // ✅ toasts (opcional):
 // - toasts: [{ id, type: "success"|"error"|"info", title, message }]
@@ -30,8 +31,8 @@ export default function Modal({ open, title, children, onClose, toasts = [], onT
       aria-modal="true"
       aria-label={title || "Modal"}
     >
-      <div className="modal">
-        {/* ✅ TOASTS dentro del modal */}
+      <div className="modal" style={{ position: "relative" }}>
+        {/*TOASTS dentro del modal */}
         {Array.isArray(toasts) && toasts.length > 0 && (
           <div className="toastHost toastHost--modal" aria-live="polite" aria-atomic="true">
             {toasts.map((t) => (
@@ -55,8 +56,10 @@ export default function Modal({ open, title, children, onClose, toasts = [], onT
 
         <div className="modal__top">
           <h3 className="modal__title">{title}</h3>
-          <button type="button" className="modal__closeBtn" onClick={onClose}>
-            Cerrar
+          <button className="modal-closeIcon" onClick={onClose} type="button" aria-label="Cerrar"
+            title="Cerrar"
+          >
+            <img src={closeIcon} alt="Cerrar" />
           </button>
         </div>
 

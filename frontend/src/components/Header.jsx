@@ -1,10 +1,9 @@
-import React from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import logoLeft from '../assets/logo_left.png'
 import logoRight from '../assets/logo_right.png'
 import avatarJefe from "../assets/Jefe.jpeg";
 import avatarUsuario from "../assets/Empleado.jpeg";
 import '../styles/Header.css'
-
 
 export default function Header({
   view,
@@ -12,7 +11,13 @@ export default function Header({
   auth,
   onTrashClick,
   onAddClick,
+
+  // ✅ ahora onAvatarClick recibe "me" | "users"
   onAvatarClick,
+
+  // ✅ nuevo: cerrar sesión
+  onLogout,
+
   notifications = [],
   unreadCount = 0,
   notifOpen = false,
@@ -22,6 +27,21 @@ export default function Header({
 }) {
   const isJefe = auth?.rol === 'jefe'
 
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const userWrapRef = useRef(null)
+
+  // cerrar menú al dar click fuera
+  useEffect(() => {
+    function onDocClick(e) {
+      if (!userWrapRef.current) return
+      if (!userWrapRef.current.contains(e.target)) {
+        setUserMenuOpen(false)
+      }
+    }
+    document.addEventListener('click', onDocClick)
+    return () => document.removeEventListener('click', onDocClick)
+  }, [])
+
   const NavBtn = ({ id, label }) => (
     <button
       className={'nav-btn' + (view === id ? ' active' : '')}
@@ -30,6 +50,23 @@ export default function Header({
       {label}
     </button>
   )
+
+  function handleOpenProfile(tab) {
+    setUserMenuOpen(false)
+    onAvatarClick?.(tab) // "me" | "users"
+  }
+
+  function handleLogout() {
+    setUserMenuOpen(false)
+    if (onLogout) return onLogout()
+
+    // fallback por si no mandas onLogout desde App
+    try {
+      localStorage.removeItem("auth")
+      localStorage.removeItem("token")
+    } catch {}
+    window.location.reload()
+  }
 
   return (
     <header className="appHeader">
@@ -55,18 +92,53 @@ export default function Header({
         <div className="appHeader__right">
           <img src={logoRight} alt="Logo derecho" style={{ height: 44, objectFit: 'contain' }} />
 
-          <img
-            className="hdr-avatar"
-            src={isJefe ? avatarJefe : avatarUsuario}
-            alt={isJefe ? "Perfil jefe" : "Perfil usuario"}
-            title={isJefe ? "Jefe" : "Empleado"}
-            role="button"
-            onClick={(e) => {
-              e.stopPropagation()
-              onAvatarClick?.()
-            }}
-            style={{ cursor: 'pointer' }}
-          />
+          {/* ✅ Avatar + menú tipo Facebook */}
+          <div className="appHeader__userWrap" ref={userWrapRef} onClick={(e) => e.stopPropagation()}>
+            <img
+              className="hdr-avatar"
+              src={isJefe ? avatarJefe : avatarUsuario}
+              alt={isJefe ? "Perfil jefe" : "Perfil usuario"}
+              title={isJefe ? "Jefe" : "Empleado"}
+              role="button"
+              onClick={() => setUserMenuOpen(v => !v)}
+              style={{ cursor: 'pointer' }}
+            />
+
+            {userMenuOpen && (
+              <div className="appHeader__userMenu">
+                <button
+                  className="appHeader__userItem"
+                  type="button"
+                  onClick={() => handleOpenProfile("me")}
+                >
+                  <i className="fa-solid fa-user-pen"></i>
+                  <span>Editar perfil</span>
+                </button>
+
+                {isJefe && (
+                  <button
+                    className="appHeader__userItem"
+                    type="button"
+                    onClick={() => handleOpenProfile("users")}
+                  >
+                    <i className="fa-solid fa-users-gear"></i>
+                    <span>Agregar usuario</span>
+                  </button>
+                )}
+
+                <div className="appHeader__userSep" />
+
+                <button
+                  className="appHeader__userItem danger"
+                  type="button"
+                  onClick={handleLogout}
+                >
+                  <i className="fa-solid fa-right-from-bracket"></i>
+                  <span>Cerrar sesión</span>
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Notificaciones */}
           {isJefe && (
@@ -77,7 +149,6 @@ export default function Header({
                 onClick={() => onToggleNotifs?.()}
               >
                 <i className="fa-solid fa-bell fa-lg"></i>
-                {/* ✅ sin número: solo punto cuando hay no leídas */}
                 {unreadCount > 0 ? <span className="appHeader__dot" /> : null}
               </div>
 
@@ -122,9 +193,6 @@ export default function Header({
 
           {/* Acciones */}
           <div className="appHeader__group">
-            {/*
-              Se oculta el botón "Agregar" cuando el usuario inicia sesión como Jefe.
-            */}
             {!isJefe && (
               <div
                 className="appHeader__icon appHeader__actionPlus"
