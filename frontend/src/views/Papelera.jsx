@@ -57,6 +57,24 @@ export default function PapeleraView({ auth, onBack, onRestored }) {
     }
   }
 
+  async function removeForever(it) {
+    if (!isJefe) return;
+    const label = it.numero_inventario || it.id_equipo;
+    if (!confirm(`⚠️ Esto eliminará DEFINITIVAMENTE el equipo ${label}. ¿Continuar?`)) return;
+
+    try {
+      setLoading(true);
+      await apiFetch(`/api/papelera/${it.id_equipo}`, { method: "DELETE" });
+      await load();
+      onRestored?.();
+      alert("Equipo eliminado definitivamente.");
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <section className="card">
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -76,8 +94,11 @@ export default function PapeleraView({ auth, onBack, onRestored }) {
         />
         <div className="small muted" style={{ marginTop: 6 }}>
           {isJefe
-            ? "Eres jefe: puedes restaurar equipos."
+            ? "Eres jefe: puedes restaurar o eliminar definitivamente equipos."
             : "Eres empleado: solo puedes visualizar la papelera."}
+        </div>
+        <div className="small muted" style={{ marginTop: 6 }}>
+          Los elementos en papelera se eliminan automáticamente después de <b>30 días</b>.
         </div>
       </div>
 
@@ -93,6 +114,7 @@ export default function PapeleraView({ auth, onBack, onRestored }) {
               <th>Área</th>
               <th>Categoría</th>
               <th>Fecha registro</th>
+              <th>Fecha borrado</th>
               {isJefe && <th>Acciones</th>}
             </tr>
           </thead>
@@ -107,12 +129,18 @@ export default function PapeleraView({ auth, onBack, onRestored }) {
                 <td>{it.nombre_area || it.id_area || "—"}</td>
                 <td>{it.nombre_categoria || it.id_categoria || "—"}</td>
                 <td>{it.fecha_registro ? String(it.fecha_registro).slice(0, 19).replace("T", " ") : "—"}</td>
+                <td>{it.fecha_borrado ? String(it.fecha_borrado).slice(0, 19).replace("T", " ") : "—"}</td>
 
                 {isJefe && (
                   <td>
-                    <button className="btn" onClick={() => restore(it)} disabled={loading}>
-                      Restaurar
-                    </button>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <button className="btn" onClick={() => restore(it)} disabled={loading}>
+                        Restaurar
+                      </button>
+                      <button className="btn danger" onClick={() => removeForever(it)} disabled={loading}>
+                        Eliminar
+                      </button>
+                    </div>
                   </td>
                 )}
               </tr>
@@ -120,7 +148,7 @@ export default function PapeleraView({ auth, onBack, onRestored }) {
 
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={isJefe ? 9 : 8} className="muted">
+                <td colSpan={isJefe ? 10 : 9} className="muted">
                   {loading ? "Cargando..." : "No hay elementos en la papelera."}
                 </td>
               </tr>

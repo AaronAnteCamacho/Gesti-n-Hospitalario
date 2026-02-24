@@ -5,6 +5,110 @@ import { requireAuth, allowRoles } from "../middlewares/auth.js";
 
 const router = Router();
 
+// GET /api/usuarios/me (cualquier usuario autenticado)
+router.get(
+  "/me",
+  requireAuth,
+  async (req, res) => {
+    try {
+      const id = Number(req.user?.id_usuario);
+      if (!id) return res.status(400).json({ ok: false, message: "ID inválido" });
+
+      const pool = await getPool();
+      const r = await pool.request().input("id", sql.Int, id).query(`
+        SELECT
+          u.id_usuario,
+          u.nombre,
+          u.correo,
+          r.nombre_rol AS rol,
+          u.activo,
+          u.fecha_creacion
+        FROM usuarios u
+        INNER JOIN roles r ON r.id_rol = u.id_rol
+        WHERE u.id_usuario=@id
+      `);
+
+      const me = r.recordset?.[0];
+      if (!me) return res.status(404).json({ ok: false, message: "Usuario no encontrado" });
+      res.json({ ok: true, data: me });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ ok: false, message: "Error consultando perfil" });
+    }
+  }
+);
+
+// PUT /api/usuarios/me (cualquier usuario autenticado)
+// body: { nombre, correo, password? }
+router.put(
+  "/me",
+  requireAuth,
+  async (req, res) => {
+    try {
+      const id = Number(req.user?.id_usuario);
+      if (!id) return res.status(400).json({ ok: false, message: "ID inválido" });
+
+      const nombre = String(req.body?.nombre || "").trim();
+      const correo = String(req.body?.correo || "").trim();
+      const password = String(req.body?.password || "");
+
+      if (!nombre || !correo) {
+        return res.status(400).json({ ok: false, message: "Faltan campos" });
+      }
+
+      const pool = await getPool();
+
+      if (password) {
+        const password_hash = await bcrypt.hash(password, 10);
+        await pool
+          .request()
+          .input("id", sql.Int, id)
+          .input("nombre", sql.VarChar(150), nombre)
+          .input("correo", sql.VarChar(100), correo)
+          .input("password_hash", sql.VarChar(255), password_hash)
+          .query(`
+            UPDATE usuarios
+            SET nombre=@nombre, correo=@correo, password_hash=@password_hash
+            WHERE id_usuario=@id
+          `);
+      } else {
+        await pool
+          .request()
+          .input("id", sql.Int, id)
+          .input("nombre", sql.VarChar(150), nombre)
+          .input("correo", sql.VarChar(100), correo)
+          .query(`
+            UPDATE usuarios
+            SET nombre=@nombre, correo=@correo
+            WHERE id_usuario=@id
+          `);
+      }
+
+      // devolver el perfil actualizado
+      const rr = await pool.request().input("id", sql.Int, id).query(`
+        SELECT
+          u.id_usuario,
+          u.nombre,
+          u.correo,
+          r.nombre_rol AS rol,
+          u.activo,
+          u.fecha_creacion
+        FROM usuarios u
+        INNER JOIN roles r ON r.id_rol = u.id_rol
+        WHERE u.id_usuario=@id
+      `);
+
+      res.json({ ok: true, data: rr.recordset?.[0] || null });
+    } catch (e) {
+      console.error(e);
+      if (String(e?.message || "").toLowerCase().includes("unique")) {
+        return res.status(400).json({ ok: false, message: "Ese correo ya existe" });
+      }
+      res.status(500).json({ ok: false, message: "Error actualizando perfil" });
+    }
+  }
+);
+
 // GET /api/usuarios (solo jefe)
 router.get(
   "/",
@@ -75,7 +179,21 @@ router.post(
           VALUES (@nombre, @correo, @password_hash, @id_rol)
         `);
 
-      res.json({ ok: true, id_usuario: ins.recordset?.[0]?.id_usuario });
+      const newId = ins.recordset?.[0]?.id_usuario;
+      const rr = await pool.request().input("id", sql.Int, newId).query(`
+        SELECT
+          u.id_usuario,
+          u.nombre,
+          u.correo,
+          r.nombre_rol AS rol,
+          u.activo,
+          u.fecha_creacion
+        FROM usuarios u
+        INNER JOIN roles r ON r.id_rol = u.id_rol
+        WHERE u.id_usuario=@id
+      `);
+
+      res.json({ ok: true, id_usuario: newId, data: rr.recordset?.[0] || null });
     } catch (e) {
       console.error(e);
       // violación UNIQUE correo
@@ -83,6 +201,95 @@ router.post(
         return res.status(400).json({ ok: false, message: "Ese correo ya existe" });
       }
       res.status(500).json({ ok: false, message: "Error creando usuario" });
+    }
+  }
+);
+
+// PUT /api/usuarios/:id (solo jefe)
+// body: { nombre, correo, rol, activo, password? }
+router.put(
+  "/:id",
+  requireAuth,
+  allowRoles("jefe"),
+  async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      if (!id) return res.status(400).json({ ok: false, message: "ID inválido" });
+
+      const nombre = String(req.body?.nombre || "").trim();
+      const correo = String(req.body?.correo || "").trim();
+      const rol = String(req.body?.rol || "empleado").trim().toLowerCase();
+      const activo = req.body?.activo;
+      const password = String(req.body?.password || "");
+
+      if (!nombre || !correo) {
+        return res.status(400).json({ ok: false, message: "Faltan campos" });
+      }
+      if (rol !== "jefe" && rol !== "empleado") {
+        return res.status(400).json({ ok: false, message: "Rol inválido" });
+      }
+      const activoBit = (activo === false || activo === 0 || activo === "0") ? 0 : 1;
+
+      const pool = await getPool();
+
+      const rolRow = await pool
+        .request()
+        .input("nombre_rol", sql.VarChar(50), rol)
+        .query(`SELECT TOP 1 id_rol FROM roles WHERE nombre_rol=@nombre_rol`);
+
+      const id_rol = rolRow.recordset?.[0]?.id_rol;
+      if (!id_rol) return res.status(400).json({ ok: false, message: "Rol no existe en BD" });
+
+      if (password) {
+        const password_hash = await bcrypt.hash(password, 10);
+        await pool
+          .request()
+          .input("id", sql.Int, id)
+          .input("nombre", sql.VarChar(150), nombre)
+          .input("correo", sql.VarChar(100), correo)
+          .input("id_rol", sql.Int, id_rol)
+          .input("activo", sql.Bit, activoBit)
+          .input("password_hash", sql.VarChar(255), password_hash)
+          .query(`
+            UPDATE usuarios
+            SET nombre=@nombre, correo=@correo, id_rol=@id_rol, activo=@activo, password_hash=@password_hash
+            WHERE id_usuario=@id
+          `);
+      } else {
+        await pool
+          .request()
+          .input("id", sql.Int, id)
+          .input("nombre", sql.VarChar(150), nombre)
+          .input("correo", sql.VarChar(100), correo)
+          .input("id_rol", sql.Int, id_rol)
+          .input("activo", sql.Bit, activoBit)
+          .query(`
+            UPDATE usuarios
+            SET nombre=@nombre, correo=@correo, id_rol=@id_rol, activo=@activo
+            WHERE id_usuario=@id
+          `);
+      }
+
+      const rr = await pool.request().input("id", sql.Int, id).query(`
+        SELECT
+          u.id_usuario,
+          u.nombre,
+          u.correo,
+          r.nombre_rol AS rol,
+          u.activo,
+          u.fecha_creacion
+        FROM usuarios u
+        INNER JOIN roles r ON r.id_rol = u.id_rol
+        WHERE u.id_usuario=@id
+      `);
+
+      res.json({ ok: true, data: rr.recordset?.[0] || null });
+    } catch (e) {
+      console.error(e);
+      if (String(e?.message || "").toLowerCase().includes("unique")) {
+        return res.status(400).json({ ok: false, message: "Ese correo ya existe" });
+      }
+      res.status(500).json({ ok: false, message: "Error actualizando usuario" });
     }
   }
 );

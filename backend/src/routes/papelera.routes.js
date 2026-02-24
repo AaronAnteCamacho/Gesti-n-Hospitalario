@@ -119,4 +119,38 @@ router.post(
   }
 );
 
+// DELETE /api/papelera/:id  (solo jefe)
+// Elimina definitivamente un equipo que esté en papelera.
+router.delete(
+  "/:id",
+  requireAuth,
+  allowRoles("jefe"),
+  async (req, res) => {
+    try {
+      const id = Number(req.params.id);
+      if (!id) return res.status(400).json({ ok: false, message: "ID inválido" });
+
+      const pool = await getPool();
+
+      const r = await pool
+        .request()
+        .input("id", sql.Int, id)
+        .query(`
+          DELETE FROM dbo.equipos
+          WHERE id_equipo = @id AND en_papelera = 1
+        `);
+
+      if (r.rowsAffected?.[0] === 0) {
+        return res.status(404).json({ ok: false, message: "No encontrado / no estaba en papelera" });
+      }
+
+      res.json({ ok: true });
+    } catch (e) {
+      console.error(e);
+      // Si hay llaves foráneas u otras restricciones, SQL Server lanzará error.
+      res.status(500).json({ ok: false, message: "Error eliminando definitivamente" });
+    }
+  }
+);
+
 export default router;

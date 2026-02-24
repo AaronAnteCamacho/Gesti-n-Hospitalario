@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react'
 import Header from './components/Header.jsx'
 import Modal from './components/Modal.jsx'
+import UserCenterModal from './components/UserCenterModal.jsx'
 import { useLocalStorageState } from './components/useLocalStorageState.js'
 
 import Home from './views/Home.jsx'
@@ -45,6 +46,9 @@ export default function App() {
     bitacoraId: null,
     body: null
   })
+
+  // ✅ Perfil / usuarios (modal al clickear avatar)
+  const [userCenterOpen, setUserCenterOpen] = useState(false)
 
   // ✅ Notificaciones (solo Jefe)
   const [notifOpen, setNotifOpen] = useState(false)
@@ -1215,6 +1219,7 @@ if (tipo === "excel") {
         view={view}
         setView={setView}
         auth={auth}
+        onAvatarClick={() => setUserCenterOpen(true)}
         notifications={notifications}
         unreadCount={unreadCount}
         notifOpen={notifOpen}
@@ -1226,6 +1231,13 @@ if (tipo === "excel") {
           setView('inventario')
           upsertInventario(null)
         }}
+      />
+
+      <UserCenterModal
+        open={userCenterOpen}
+        onClose={() => setUserCenterOpen(false)}
+        auth={auth}
+        onAuthUpdate={(next) => setAuth(next)}
       />
 
       <main className="container">

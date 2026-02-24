@@ -12,6 +12,7 @@ export default function Header({
   auth,
   onTrashClick,
   onAddClick,
+  onAvatarClick,
   notifications = [],
   unreadCount = 0,
   notifOpen = false,
@@ -59,6 +60,12 @@ export default function Header({
             src={isJefe ? avatarJefe : avatarUsuario}
             alt={isJefe ? "Perfil jefe" : "Perfil usuario"}
             title={isJefe ? "Jefe" : "Empleado"}
+            role="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onAvatarClick?.()
+            }}
+            style={{ cursor: 'pointer' }}
           />
 
           {/* Notificaciones */}
@@ -115,17 +122,10 @@ export default function Header({
 
           {/* Acciones */}
           <div className="appHeader__group">
-            {isJefe && (
-              <div
-                className="appHeader__icon"
-                title="Usuarios"
-                onClick={() => setView('perfil')}
-              >
-                <i className="fa-solid fa-users fa-lg"></i>
-              </div>
-            )}
-
-            {isJefe && (
+            {/*
+              Se oculta el botón "Agregar" cuando el usuario inicia sesión como Jefe.
+            */}
+            {!isJefe && (
               <div
                 className="appHeader__icon appHeader__actionPlus"
                 title="Agregar"
