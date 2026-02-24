@@ -106,7 +106,6 @@ export default function PapeleraView({ auth, onBack, onRestored }) {
         <table className="table">
           <thead>
             <tr>
-              <th>ID Equipo</th>
               <th>Inventario</th>
               <th>Equipo</th>
               <th>Marca</th>
@@ -121,7 +120,6 @@ export default function PapeleraView({ auth, onBack, onRestored }) {
           <tbody>
             {filtered.map((it) => (
               <tr key={it.id_equipo}>
-                <td>{it.id_equipo}</td>
                 <td>{it.numero_inventario || "—"}</td>
                 <td>{it.nombre_equipo || "—"}</td>
                 <td>{it.marca || "—"}</td>
@@ -148,7 +146,7 @@ export default function PapeleraView({ auth, onBack, onRestored }) {
 
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={isJefe ? 10 : 9} className="muted">
+                <td colSpan={isJefe ? 9 : 8} className="muted">
                   {loading ? "Cargando..." : "No hay elementos en la papelera."}
                 </td>
               </tr>

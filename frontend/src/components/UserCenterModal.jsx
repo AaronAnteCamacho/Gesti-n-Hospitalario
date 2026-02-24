@@ -52,7 +52,6 @@ export default function UserCenterModal({ open, onClose, auth, onAuthUpdate }) {
 
       const updated = r?.data || null;
 
-      // ✅ Actualiza UI/localStorage (el token no cambia, pero el header puede mostrar lo nuevo)
       const nextAuth = {
         ...(auth || {}),
         nombre: updated?.nombre ?? meNombre.trim(),
@@ -128,14 +127,13 @@ export default function UserCenterModal({ open, onClose, auth, onAuthUpdate }) {
         }),
       });
 
-      // ✅ actualiza tabla en UI sin recargar
       const created = r?.data;
       if (created?.id_usuario) {
         setUsuarios((prev) => [created, ...prev]);
       } else {
-        // fallback
         await loadUsuarios();
       }
+
       setCNombre("");
       setCCorreo("");
       setCPass("");
@@ -171,11 +169,13 @@ export default function UserCenterModal({ open, onClose, auth, onAuthUpdate }) {
 
       const updated = r?.data;
       if (updated?.id_usuario) {
-        setUsuarios((prev) => prev.map((u) => (u.id_usuario === updated.id_usuario ? updated : u)));
+        setUsuarios((prev) =>
+          prev.map((u) => (u.id_usuario === updated.id_usuario ? updated : u))
+        );
       } else {
-        // fallback
         await loadUsuarios();
       }
+
       setEditing(null);
       setEPass("");
       alert("Usuario actualizado.");
@@ -187,12 +187,13 @@ export default function UserCenterModal({ open, onClose, auth, onAuthUpdate }) {
   }
 
   async function deleteUser(u) {
-    const ok = confirm(`¿Seguro que quieres eliminar a "${u?.nombre}" (${u?.correo})?`);
+    const ok = confirm(
+      `¿Seguro que quieres eliminar a "${u?.nombre}" (${u?.correo})?`
+    );
     if (!ok) return;
     setULoading(true);
     try {
       await apiFetch(`/api/usuarios/${u.id_usuario}`, { method: "DELETE" });
-      // ✅ actualiza tabla en UI sin recargar
       setUsuarios((prev) => prev.filter((x) => x.id_usuario !== u.id_usuario));
       alert("Usuario eliminado.");
     } catch (err) {
@@ -245,11 +246,19 @@ export default function UserCenterModal({ open, onClose, auth, onAuthUpdate }) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <div>
               <label>Nombre</label>
-              <input value={meNombre} onChange={(e) => setMeNombre(e.target.value)} placeholder="Tu nombre" />
+              <input
+                value={meNombre}
+                onChange={(e) => setMeNombre(e.target.value)}
+                placeholder="Tu nombre"
+              />
             </div>
             <div>
               <label>Correo</label>
-              <input value={meCorreo} onChange={(e) => setMeCorreo(e.target.value)} placeholder="correo@..." />
+              <input
+                value={meCorreo}
+                onChange={(e) => setMeCorreo(e.target.value)}
+                placeholder="correo@..."
+              />
             </div>
             <div>
               <label>Rol</label>
@@ -257,7 +266,12 @@ export default function UserCenterModal({ open, onClose, auth, onAuthUpdate }) {
             </div>
             <div>
               <label>Nueva contraseña (opcional)</label>
-              <input value={meNewPass} onChange={(e) => setMeNewPass(e.target.value)} type="password" placeholder="••••••" />
+              <input
+                value={meNewPass}
+                onChange={(e) => setMeNewPass(e.target.value)}
+                type="password"
+                placeholder="••••••"
+              />
             </div>
           </div>
 
@@ -324,9 +338,12 @@ export default function UserCenterModal({ open, onClose, auth, onAuthUpdate }) {
           )}
 
           {editing && (
-            <form onSubmit={saveEdit} style={{ marginTop: 14, padding: 12, border: "1px solid #e5e5e5", borderRadius: 10 }}>
+            <form
+              onSubmit={saveEdit}
+              style={{ marginTop: 14, padding: 12, border: "1px solid #e5e5e5", borderRadius: 10 }}
+            >
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                <strong>Editar usuario #{editing.id_usuario}</strong>
+                <strong>Editar usuario</strong>
                 <div className="small muted" style={{ flex: 1 }}>
                   {editing.correo}
                 </div>
@@ -376,7 +393,7 @@ export default function UserCenterModal({ open, onClose, auth, onAuthUpdate }) {
             <table className="table">
               <thead>
                 <tr>
-                  <th>ID</th>
+                  {/* ✅ ID QUITADO */}
                   <th>Nombre</th>
                   <th>Correo</th>
                   <th>Rol</th>
@@ -387,7 +404,7 @@ export default function UserCenterModal({ open, onClose, auth, onAuthUpdate }) {
               <tbody>
                 {usuarios.map((u) => (
                   <tr key={u.id_usuario}>
-                    <td>{u.id_usuario}</td>
+                    {/* ✅ ID QUITADO */}
                     <td>{u.nombre}</td>
                     <td>{u.correo}</td>
                     <td>{u.rol || "—"}</td>
@@ -405,7 +422,8 @@ export default function UserCenterModal({ open, onClose, auth, onAuthUpdate }) {
 
                 {usuarios.length === 0 && !uLoading && (
                   <tr>
-                    <td colSpan={6} className="muted">
+                    {/* antes era 6, ahora 5 */}
+                    <td colSpan={5} className="muted">
                       No hay usuarios.
                     </td>
                   </tr>

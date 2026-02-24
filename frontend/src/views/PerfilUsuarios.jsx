@@ -163,7 +163,6 @@ export default function PerfilUsuariosView() {
         <table className="table">
           <thead>
             <tr>
-              <th>ID</th>
               <th>Nombre</th>
               <th>Correo</th>
               <th>Rol</th>
@@ -175,7 +174,6 @@ export default function PerfilUsuariosView() {
           <tbody>
             {usuarios.map((u) => (
               <tr key={u.id_usuario}>
-                <td>{u.id_usuario}</td>
                 <td>{u.nombre}</td>
                 <td>{u.correo}</td>
                 <td>{u.rol || "—"}</td>
@@ -191,7 +189,7 @@ export default function PerfilUsuariosView() {
 
             {usuarios.length === 0 && !loading && (
               <tr>
-                <td colSpan={7} className="muted">
+                <td colSpan={6} className="muted">
                   No hay usuarios.
                 </td>
               </tr>
