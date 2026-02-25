@@ -3,6 +3,12 @@ import Modal from "../components/Modal.jsx";
 import "../styles/Inventario.css";
 import logoLeft from "../assets/logo_left.png";
 import logoRight from "../assets/logo_right.png";
+import reporteFallaIcon from "../assets/reporte_falla.png";
+import editIcon from "../assets/edit_icon.png";
+import recyclingIcon from "../assets/recycling_icon.png";
+
+
+
 
 function norm(s) {
   return String(s || "")
@@ -49,14 +55,32 @@ export default function InventarioView({
   onUpdate,
   onDelete,
 }) {
+useEffect(() => {
   // ✅ “marca” para confirmar que ESTE archivo es el que corre
-  useEffect(() => {
-    console.log("[InventarioView.jsx ACTIVO ✅]", {
-      hasOnAdd: !!onAdd,
-      hasOnEdit: !!onEdit,
-      hasOnTrash: !!onTrash,
-    });
-  }, [onAdd, onEdit, onTrash]);
+  console.log("[InventarioView.jsx ACTIVO ✅]", {
+    hasOnAdd: !!onAdd,
+    hasOnEdit: !!onEdit,
+    hasOnTrash: !!onTrash,
+  });
+
+  // ===== calcula altura del header y la guarda en CSS var =====
+  const setHdr = () => {
+    const hdr =
+      document.querySelector(".hdr") ||
+      document.querySelector("header") ||
+      document.querySelector(".appHeader") ||
+      document.querySelector(".header");
+
+    const h = hdr ? Math.ceil(hdr.getBoundingClientRect().height) : 0;
+    document.documentElement.style.setProperty("--hdr-h", `${h}px`);
+  };
+
+  setHdr();
+  window.addEventListener("resize", setHdr);
+  return () => window.removeEventListener("resize", setHdr);
+}, [onAdd, onEdit, onTrash]);
+
+
 
   const [inventario, setInventario] = useState(inventarioProp);
   useEffect(() => setInventario(inventarioProp), [inventarioProp]);
@@ -190,30 +214,38 @@ export default function InventarioView({
   const tableWrapRef = useRef(null);
   const [hasOverflow, setHasOverflow] = useState(false);
   const [scrollDir, setScrollDir] = useState("right");
+  const hintRef = useRef(null);
+  const tableWrapBoxRef = useRef(null); // para medir ancho/posición
+  const [pinHint, setPinHint] = useState(false);
+const [pinStyle, setPinStyle] = useState({ top: 0, left: 0, width: 0 });
+const [hintH, setHintH] = useState(0);
 
-  useEffect(() => {
-    const el = tableWrapRef.current;
-    if (!el) return;
+ useEffect(() => {
+  const el = tableWrapRef.current;
+  if (!el) return;
 
-    const check = () => {
-      const { overflow, canLeft, canRight } = getScrollState(el);
-      setHasOverflow(overflow);
+  const check = () => {
+    const { overflow, canLeft, canRight } = getScrollState(el);
+    setHasOverflow(overflow);
 
-      if (overflow && !canRight && canLeft) setScrollDir("left");
-      if (overflow && !canLeft && canRight) setScrollDir("right");
-    };
+    if (overflow && !canRight && canLeft) setScrollDir("left");
+    if (overflow && !canLeft && canRight) setScrollDir("right");
+    if (!overflow) setScrollDir("right");
+  };
 
-    const onScroll = () => requestAnimationFrame(check);
+  const onScroll = () => requestAnimationFrame(check);
 
-    check();
-    el.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", check);
+  // ✅ recalcula después de renderizar la tabla (importante cuando cambian filtros)
+  requestAnimationFrame(check);
 
-    return () => {
-      el.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", check);
-    };
-  }, [list.length]);
+  el.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", check);
+
+  return () => {
+    el.removeEventListener("scroll", onScroll);
+    window.removeEventListener("resize", check);
+  };
+}, [list]); // ✅ antes: [list.length]
 
   function stepScroll() {
     const el = tableWrapRef.current;
@@ -472,21 +504,19 @@ function downloadAllInventario() {
         </div>
       </div>
 
-      {hasOverflow && (
-        <div className="inventario__scrollHint">
-          <span>Desliza para ver más columnas</span>
+  <div className="inventario__scrollHint">
+  <span>Desliza para ver más columnas</span>
 
-          <button type="button" className="inventario__scrollBtn" onClick={stepScroll}>
-            <i
-              className={
-                scrollDir === "right"
-                  ? "fa-solid fa-arrow-right"
-                  : "fa-solid fa-arrow-left"
-              }
-            />
-          </button>
-        </div>
-      )}
+  <button
+    type="button"
+    className="inventario__scrollBtn"
+    onClick={stepScroll}
+    disabled={!hasOverflow}
+    title={!hasOverflow ? "No hay más columnas por mostrar" : "Desplazar"}
+  >
+    <i className={scrollDir === "right" ? "fa-solid fa-arrow-right" : "fa-solid fa-arrow-left"} />
+  </button>
+</div>
 
       <div className="inventario__tableWrap" ref={tableWrapRef}>
         <table className="table">
@@ -521,18 +551,33 @@ function downloadAllInventario() {
                 <td>
                   <div className="inventario__acciones">
                     <button
-                      className="nav-btn inventario__sendBtn"
+                      type="button"
+                      className="icon-btn"
                       onClick={() => onReportFalla?.(it)}
+                      title="Reporte de falla"
+                      aria-label="Reporte de falla"
                     >
-                      Reporte de falla
+                      <img src={reporteFallaIcon} alt="" />
                     </button>
 
-                    <button className="btn" onClick={() => (onEdit ? onEdit(it) : openEdit(it))}>
-                      Editar
-                    </button>
+                    <button
+                      type="button"
+                      className="icon-btn"
+                      onClick={() => (onEdit ? onEdit(it) : openEdit(it))}
+                      title="Editar"
+                      aria-label="Editar"
+                    >
+                      <img src={editIcon} alt="" />
+                    </button> 
 
-                    <button className="btn danger" onClick={() => (onTrash ? onTrash(it) : remove(it))}>
-                      Borrar
+                    <button
+                      type="button"
+                      className="icon-btn icon-btn--danger"
+                      onClick={() => (onTrash ? onTrash(it) : remove(it))}
+                      title="Borrar"
+                      aria-label="Borrar"
+                    >
+                      <img src={recyclingIcon} alt="" />
                     </button>
                   </div>
                 </td>

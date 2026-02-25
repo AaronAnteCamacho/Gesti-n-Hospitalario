@@ -110,14 +110,16 @@
 
 /* Tabla */
 .inventario__tableWrap {
-  margin-top: 10px;
-  overflow-x: auto;
+  border: 1px solid rgba(18, 120, 70, 0.20);
+  border-radius: 16px;
+  overflow: hidden;
 }
 
 /* Fondo “glass” detrás de la tabla */
 .inventario__tableWrap table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   background: rgba(255, 255, 255, 0.10);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 14px;
@@ -131,13 +133,26 @@
   letter-spacing: 0.2px;
   color: rgba(6, 46, 34, 0.95);
   background: rgba(255, 255, 255, 0.28);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+  border-bottom: 1px solid rgba(18, 120, 70, 0.22);
 }
 
+
+/* ✅ SOLO títulos (encabezados) centrados */
+.inventario__tableWrap thead th{
+  text-align: center;
+}
+
+/* ✅ Asegura que el contenido NO se centre (vuelve al default) */
+.inventario__tableWrap tbody td{
+  text-align: left; /* o quítalo si antes no lo tenías */
+}
 /* Celdas */
 .inventario__tableWrap tbody td {
   color: rgba(6, 46, 34, 0.88);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  border-bottom: 1px solid rgba(18, 120, 70, 0.16);
+}
+.inventario__tableWrap tbody tr:last-child td{
+  border-bottom: none;
 }
 
 /* Zebra suave */
@@ -323,4 +338,127 @@
   appearance: none;
 }
 
+.icon-btn{
+  width: 44px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform .08s ease, box-shadow .12s ease, background .12s ease;
+}
 
+.icon-btn img{
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.icon-btn:hover{
+  background: rgba(255,255,255,0.25);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.10);
+  transform: translateY(-1px);
+}
+
+.icon-btn:active{
+  transform: translateY(0px);
+  box-shadow: none;
+}
+
+.icon-btn--danger:hover{
+  background: rgba(255, 0, 0, 0.08);
+}
+
+.inventario__scrollBtn:disabled{
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+/* Contenedor del bloque tabla */
+.inventario__tableCard{
+  position: relative;
+}
+
+/* Hint pegajoso */
+.inventario__scrollHint--sticky{
+  position: sticky;
+  top: 10px;              /* ajusta: qué tan pegado arriba */
+  z-index: 50;
+  backdrop-filter: blur(6px);
+  background: rgba(220, 245, 235, 0.75);  /* verde suave */
+  border: 1px solid rgba(18, 120, 70, 0.18);
+  border-radius: 14px;
+  padding: 10px 12px;
+  margin-bottom: 10px;     /* separa del borde de la tabla */
+}
+
+/* cuando no hay overflow, que se note deshabilitado */
+.inventario__scrollBtn:disabled{
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.inventario__scrollHint--normal{
+  position: relative;
+}
+
+.inventario__scrollHint--fixed{
+  position: fixed;
+  z-index: 999;
+  /* top/left/width vienen por inline style */
+  backdrop-filter: blur(6px);
+  background: rgba(220, 245, 235, 0.92);
+  border: 1px solid rgba(18, 120, 70, 0.18);
+  border-radius: 14px;
+}
+
+.inventario__scrollHint--normal{
+  position: relative;
+}
+
+/* Cuando está “pegado” al bajar (sin joder diseño ni quedar bajo el header) */
+.inventario__scrollHint--pinned{
+  position: fixed;
+  z-index: 600; /* alto, pero normalmente debajo del header si el header tiene más z-index */
+  margin: 0;    /* el espaciador ya conserva el margen original */
+  border-radius: 12px;
+  backdrop-filter: blur(6px);
+}
+
+/* ===== FIX: “Desliza para ver más columnas” que baje contigo ===== */
+.inventario__scrollHint{
+  position: sticky;
+  top: 130px;        /* 👈 altura del header (ajústalo si tu header es más alto/bajo) */
+  z-index: 200;
+  backdrop-filter: blur(8px);
+}
+
+
+/* ===== MOBILE FIX para el hint ===== */
+@media (max-width: 768px) {
+  .inventario__scrollHint {
+    position: sticky;            /* más confiable que sticky en móvil */
+    top: 260px;                 /* 👈 ajusta este número a la altura real del header en móvil */
+    left: 16px;
+    right: 16px;
+    z-index: 999;
+  }
+
+  /* Para que el hint no tape la primera fila/tabla */
+  .inventario__scrollHint{
+    position: sticky;
+    top: calc(var(--hdr-h, 0px) + 8px); /* 8px de margen */
+    z-index: 5; /* debajo del header */
+  }
+
+  /* Asegura que el header siempre esté encima */
+  header, .hdr, .appHeader, .header {
+    position: sticky; /* o fixed si ya lo es, no lo rompe */
+    top: 0;
+    z-index: 9999;
+  }
+}

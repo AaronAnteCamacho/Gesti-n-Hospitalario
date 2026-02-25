@@ -20,4 +20,7 @@ body{
     radial-gradient(1200px 600px at 20% 10%, rgba(255,255,255,.20), transparent 55%),
     radial-gradient(900px 500px at 70% 20%, rgba(255,255,255,.12), transparent 60%),
     linear-gradient(140deg, rgba(16,185,129,.18), rgba(6,95,70,.85));
+    background-attachment: fixed, fixed, fixed; /* 👈 clave */
+    background-repeat: no-repeat;
+    background-size: cover;
 }
