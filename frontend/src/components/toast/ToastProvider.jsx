@@ -33,17 +33,42 @@ export function ToastProvider({ children, defaultDuration = 2600, position = "to
     [defaultDuration, remove]
   );
 
-  const api = useMemo(
-    () => ({
-      show,
-      success: (message, opts = {}) => show({ type: "success", title: "Notificación", message, ...opts }),
-      error: (message, opts = {}) => show({ type: "error", title: "Notificación", message, ...opts }),
-      info: (message, opts = {}) => show({ type: "info", title: "Notificación", message, ...opts }),
-      remove,
-      clear: () => setToasts([]),
-    }),
-    [show, remove]
-  );
+
+const api = useMemo(
+  () => ({
+    show,
+    success: (message, opts = {}) => show({ type: "success", title: "Notificación", message, ...opts }),
+    error: (message, opts = {}) => show({ type: "error", title: "Notificación", message, ...opts }),
+    info: (message, opts = {}) => show({ type: "info", title: "Notificación", message, ...opts }),
+
+    // confirmación con Promise
+    confirm: (message, opts = {}) =>
+      new Promise((resolve) => {
+        const id = uid();
+
+        setToasts((prev) => [
+          ...prev,
+          {
+            id,
+            type: "confirm",
+            title: opts.title || "Confirmación",
+            message,
+            duration: 0, //no se cierra solo
+            createdAt: Date.now(),
+            onResolve: resolve,
+            actions: [
+              { label: opts.cancelText || "Cancelar", value: false, variant: "ghost" },
+              { label: opts.okText || "Aceptar", value: true, variant: "primary" },
+            ],
+          },
+        ]);
+      }),
+
+    remove,
+    clear: () => setToasts([]),
+  }),
+  [show, remove]
+);
 
   return (
     <ToastCtx.Provider value={api}>

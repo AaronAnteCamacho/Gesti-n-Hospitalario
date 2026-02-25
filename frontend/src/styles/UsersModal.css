@@ -1,0 +1,139 @@
+.usersModal {}
+
+/* Header row (contador + botones) */
+.usersModal__topRow{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.usersModal__count{
+  flex: 1;
+}
+
+/* ==== Tabla estilo Inventario ==== */
+.usersModal__tableWrap{
+  margin-top: 12px;
+  border: 1px solid rgba(18, 120, 70, 0.20);
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.usersModal__tableScroll{
+  overflow-x: auto;
+}
+
+/* tabla "glass" */
+.usersModal__table{
+  width: 100%;
+  min-width: 820px; /* para que no se aplaste */
+  border-collapse: separate;
+  border-spacing: 0;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* header */
+.usersModal__table thead th{
+  text-align: center;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: rgba(6, 46, 34, 0.95);
+  background: rgba(255, 255, 255, 0.28);
+  border-bottom: 1px solid rgba(18, 120, 70, 0.22);
+  padding: 12px 12px;
+  white-space: nowrap;
+}
+
+/* celdas */
+.usersModal__table tbody td{
+  text-align: center;   
+  color: rgba(6, 46, 34, 0.88);
+  border-bottom: 1px solid rgba(18, 120, 70, 0.16);
+  padding: 12px 12px;
+  vertical-align: middle;
+}
+
+.usersModal__table tbody tr:last-child td{
+  border-bottom: none;
+}
+
+/* zebra */
+.usersModal__table tbody tr:nth-child(odd) td{
+  background: rgba(255, 255, 255, 0.16);
+}
+.usersModal__table tbody tr:nth-child(even) td{
+  background: rgba(255, 255, 255, 0.10);
+}
+
+/* hover */
+.usersModal__table tbody tr:hover td{
+  background: rgba(255, 255, 255, 0.24);
+}
+
+/* columnas */
+.usersModal__colNombre{ min-width: 240px; }
+.usersModal__colCorreo{ min-width: 320px; }
+.usersModal__colRol{ min-width: 140px; }
+.usersModal__colActivo{ min-width: 110px; }
+.usersModal__colAcciones{ min-width: 220px; }
+
+/* acciones en una fila */
+.usersModal__acciones{
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+/* fallback: si algo trae .danger suelto, lo hacemos consistente */
+.modal .danger{
+  background: linear-gradient(180deg, #b91c1c, #7f1d1d);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(0,0,0,.18);
+}
+.modal .danger:hover{ filter: brightness(1.05); }
+
+/* Nota final */
+.usersModal__note{
+  margin-top: 10px;
+}
+
+/* ==== Botones con ícono (igual feeling que Inventario) ==== */
+.usersModal .icon-btn{
+  width: 44px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform .08s ease, box-shadow .12s ease, background .12s ease;
+}
+
+.usersModal .icon-btn img{
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.usersModal .icon-btn:hover{
+  background: rgba(255,255,255,0.25);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.10);
+  transform: translateY(-1px);
+}
+
+.usersModal .icon-btn:active{
+  transform: translateY(0px);
+  box-shadow: none;
+}

@@ -4,7 +4,6 @@ import Modal from './components/Modal.jsx'
 import ProfileModal from './components/ProfileModal.jsx'
 import UsersModal from './components/UsersModal.jsx'
 import { useLocalStorageState } from './components/useLocalStorageState.js'
-
 import Home from './views/Home.jsx'
 import Inventario from './views/Inventario.jsx'
 import Bitacora from './views/Bitacora.jsx'
@@ -23,6 +22,7 @@ function isoDate() {
 
 export default function App() {
   const [view, setView] = useState('login')
+ 
 
   const [auth, setAuth] = useState(() => {
     try {
@@ -106,6 +106,24 @@ export default function App() {
     success: (message, opts = {}) => pushToast('success', message, opts),
     error: (message, opts = {}) => pushToast('error', message, opts),
     info: (message, opts = {}) => pushToast('info', message, opts),
+
+    confirm: (message, opts = {}) =>
+  new Promise((resolve) => {
+    const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    const t = {
+      id,
+      type: "confirm",
+      title: opts.title || "Confirmación",
+      message,
+      duration: 0, // ✅ NO autoclose
+      actions: [
+        { label: opts.cancelText || "Cancelar", value: false, variant: "ghost" },
+        { label: opts.okText || "Aceptar", value: true, variant: "primary" },
+      ],
+      onResolve: resolve,
+    }
+    setToasts((prev) => [...prev, t])
+  }),
   }
 
   function ToastViewport({ scope = "fixed" }) {
@@ -123,6 +141,22 @@ export default function App() {
             </button>
           </div>
           <div className="toast__msg">{t.message}</div>
+          {t.type === "confirm" && Array.isArray(t.actions) && (
+  <div className="toast__actions">
+    {t.actions.map((a, idx) => (
+      <button
+        key={idx}
+        className={`toast__btn ${a.variant === "primary" ? "toast__btn--primary" : "toast__btn--ghost"}`}
+        onClick={() => {
+          try { t.onResolve?.(a.value) } catch {}
+          closeToast(t.id)
+        }}
+      >
+        {a.label}
+      </button>
+    ))}
+  </div>
+)}
         </div>
       ))}
     </div>

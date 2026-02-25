@@ -84,3 +84,48 @@
   right: 10px;
   z-index: 9999;
 }
+
+/* ===== Confirm toast (azul) ===== */
+.toast--confirm{
+  border: 1px solid rgba(0,0,0,.08); /* igual que los demás */
+}
+
+.toast--confirm .toast__bar,
+.toast--confirm .toast__head{
+  background: #2563eb; /* mismo azul que .toast--info */
+}
+/* acciones */
+.toast__actions{
+  padding: 0 10px 10px;   /* en vez de margin-top */
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.toast__btn{
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 7px 12px;
+  cursor: pointer;
+  border: 1px solid rgba(0,0,0,.10);
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.toast__btn--ghost{
+  background: transparent;
+  border: none;
+  color: rgba(0,0,0,.70);
+}
+
+.toast__btn--primary{
+  background: #2563eb; /* mismo azul info */
+  border-color: rgba(37,99,235,.35);
+  color: #fff;
+}
+.toast__btn--primary:hover{ filter: brightness(1.05); }
+
+.toast, .toast__btn{
+  font-family: inherit;
+}
