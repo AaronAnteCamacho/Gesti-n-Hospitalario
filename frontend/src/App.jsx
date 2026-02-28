@@ -1041,7 +1041,15 @@ if (tipo === "excel") {
     if (view === 'papelera') {
       return <Papelera auth={auth} onBack={() => setView('inventario')} onRestored={() => loadInventario()} />
     }
-    return <Formulario pendientes={pendientes} setPendientes={setPendientes} terminados={terminados} setTerminados={setTerminados} />
+    return (
+      <Formulario
+        inventario={inventario}
+        pendientes={pendientes}
+        setPendientes={setPendientes}
+        terminados={terminados}
+        setTerminados={setTerminados}
+      />
+    )
   }, [view, auth, inventario, areas, categorias, bitacoras, pendientes, terminados])
 
   if (view === 'login' || !auth) {

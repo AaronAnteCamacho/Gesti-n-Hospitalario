@@ -16,6 +16,7 @@ function emptySvc() {
     equipo: '',
     marca: '',
     modelo: '',
+    serie: '',
     inv: '',
     falla: '',
     actividades: '',
@@ -26,6 +27,7 @@ function emptySvc() {
 }
 
 export default function Formulario({
+  inventario,
   pendientes,
   setPendientes,
   terminados,
@@ -38,6 +40,10 @@ export default function Formulario({
   const [formOpen, setFormOpen] = useState(false)
   const [formMode, setFormMode] = useState('create') // 'create' | 'edit'
   const [editIndex, setEditIndex] = useState(-1)
+
+  // Cuando creas un formulario desde un pendiente, guardamos la referencia
+  // para poder removerlo de la tabla de pendientes al guardar.
+  const [fromPendienteRef, setFromPendienteRef] = useState(null)
 
   const [svc, setSvc] = useState(emptySvc())
 
@@ -65,18 +71,36 @@ export default function Formulario({
     setSvc(emptySvc())
     setEditIndex(-1)
     setFormMode('create')
+    setFromPendienteRef(null)
   }
 
   function openCreateFromPendiente(p) {
+    // Buscar el equipo real en la tabla de equipos (inventario) por No. inventario.
+    const invNum = String(p?.inventario ?? '').trim()
+    const eq = (inventario || []).find((e) => String(e?.numero_inventario ?? '').trim() === invNum)
+
     setFormMode('create')
     setEditIndex(-1)
+    setFromPendienteRef(p)
+
+    const fallaTxt =
+      typeof p?.falla === 'string'
+        ? p.falla
+        : (p?.falla?.observaciones || '')
 
     setSvc((s) => ({
       ...s,
-      area: p?.area || s.area,
-      equipo: p?.nombre || '',
-      inv: p?.inventario || '',
-      inicio: todayISO(),
+      // Prioridad: datos reales de equipos; si no existe, usa lo del pendiente.
+      area: eq?.nombre_area || p?.area || s.area,
+      equipo: eq?.nombre_equipo || p?.nombre || '',
+      marca: eq?.marca || s.marca,
+      modelo: eq?.modelo || s.modelo,
+      serie: eq?.numero_serie || p?.serie || s.serie,
+      inv: eq?.numero_inventario || p?.inventario || '',
+      // Si el pendiente trae fecha, úsala como inicio; si no, hoy.
+      inicio: (p?.fecha && String(p.fecha).length >= 8) ? p.fecha : todayISO(),
+      // Si en el reporte de falla guardaste observaciones, úsalo como falla.
+      falla: fallaTxt || s.falla,
     }))
 
     setFormOpen(true)
@@ -92,6 +116,7 @@ export default function Formulario({
       equipo: t?.nombre || '',
       marca: t?.marca || '',
       modelo: t?.modelo || '',
+      serie: t?.serie || '',
       inv: t?.inventario || '',
       falla: t?.falla || '',
       actividades: t?.actividades || '',
@@ -103,18 +128,19 @@ export default function Formulario({
     setFormOpen(true)
   }
 
-  function openDeletePrompt(kind, idx) {
+  function openDeletePrompt(kind, item) {
     const ok = confirm('¿Seguro que deseas eliminar este registro?')
     if (!ok) return
 
     if (kind === 'pendientes') {
-      setPendientes((prev) => (prev || []).filter((_, i) => i !== idx))
+      // Eliminar por referencia (evita borrar el equivocado si hay filtro/búsqueda)
+      setPendientes((prev) => (prev || []).filter((p) => p !== item))
       alert('Pendiente eliminado.')
       return
     }
 
     if (kind === 'terminados') {
-      setTerminados((prev) => (prev || []).filter((_, i) => i !== idx))
+      setTerminados((prev) => (prev || []).filter((t) => t !== item))
       alert('Terminado eliminado.')
     }
   }
@@ -127,7 +153,7 @@ export default function Formulario({
     if (!svc.tecnico?.trim()) return alert('Falta técnico responsable')
 
     const registro = {
-      serie: 'S/N',
+      serie: svc.serie?.trim() || 'S/N',
       nombre: svc.equipo,
       inicio: svc.inicio,
       area: svc.area,
@@ -158,9 +184,18 @@ export default function Formulario({
 
     // create: mover a terminados y (si quieres) eliminar de pendientes
     setTerminados((prev) => [registro, ...(prev || [])])
+
+    // Si este formulario salió de un pendiente, lo quitamos de pendientes.
+    if (fromPendienteRef) {
+      setPendientes((prev) => (prev || []).filter((p) => p !== fromPendienteRef))
+    }
+
     alert('Formulario guardado en Terminados.')
     setFormOpen(false)
     resetService()
+
+    // Cambia automáticamente al tab de Terminados
+    setTab('terminados')
   }
 
   return (
@@ -228,7 +263,7 @@ export default function Formulario({
                         <button className="btn" onClick={() => openCreateFromPendiente(p)}>
                           Crear formulario
                         </button>
-                        <button className="nav-btn" onClick={() => openDeletePrompt('pendientes', idx)}>
+                        <button className="nav-btn" onClick={() => openDeletePrompt('pendientes', p)}>
                           Eliminar
                         </button>
                       </div>
@@ -273,7 +308,7 @@ export default function Formulario({
                         <button className="btn" onClick={() => openEditTerminado(t, idx)}>
                           Editar
                         </button>
-                        <button className="nav-btn" onClick={() => openDeletePrompt('terminados', idx)}>
+                        <button className="nav-btn" onClick={() => openDeletePrompt('terminados', t)}>
                           Eliminar
                         </button>
                       </div>
@@ -332,10 +367,11 @@ export default function Formulario({
             </div>
 
             <div>
-              <label>Marca / Modelo / No. Inventario</label>
+              <label>Marca / Modelo / Serie / No. Inventario</label>
               <div className="formulario__tripleRow">
                 <input value={svc.marca} onChange={(e) => setSvc(s => ({ ...s, marca: e.target.value }))} placeholder="Marca" />
                 <input value={svc.modelo} onChange={(e) => setSvc(s => ({ ...s, modelo: e.target.value }))} placeholder="Modelo" />
+                <input value={svc.serie} onChange={(e) => setSvc(s => ({ ...s, serie: e.target.value }))} placeholder="Serie" />
                 <input value={svc.inv} onChange={(e) => setSvc(s => ({ ...s, inv: e.target.value }))} placeholder="Inventario" />
               </div>
             </div>

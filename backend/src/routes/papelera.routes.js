@@ -132,23 +132,54 @@ router.delete(
 
       const pool = await getPool();
 
-      const r = await pool
-        .request()
-        .input("id", sql.Int, id)
-        .query(`
-          DELETE FROM dbo.equipos
-          WHERE id_equipo = @id AND en_papelera = 1
-        `);
+      const tx = new sql.Transaction(pool);
+      await tx.begin();
 
-      if (r.rowsAffected?.[0] === 0) {
-        return res.status(404).json({ ok: false, message: "No encontrado / no estaba en papelera" });
+      try {
+        // ✅ Crea un request por transacción
+        const reqTx = new sql.Request(tx);
+
+        // ✅ Declara el parámetro UNA sola vez
+        reqTx.input("id", sql.Int, id);
+
+        // 1) Verifica que exista y esté en papelera
+        const chk = await reqTx.query(
+          `SELECT TOP 1 id_equipo
+           FROM dbo.equipos
+           WHERE id_equipo = @id AND en_papelera = 1`
+        );
+
+        if (!chk.recordset?.length) {
+          await tx.rollback();
+          return res.status(404).json({ ok: false, message: "No encontrado / no estaba en papelera" });
+        }
+
+        // 2) Borra dependencias
+        await reqTx.query(`DELETE FROM dbo.notificaciones WHERE id_equipo = @id`);
+        await reqTx.query(`DELETE FROM dbo.bitacoras WHERE id_equipo = @id`);
+        await reqTx.query(`DELETE FROM dbo.formularios_servicio WHERE id_equipo = @id`);
+
+        // 3) Borra el equipo
+        const r = await reqTx.query(
+          `DELETE FROM dbo.equipos
+           WHERE id_equipo = @id AND en_papelera = 1`
+        );
+
+        if (r.rowsAffected?.[0] === 0) {
+          await tx.rollback();
+          return res.status(404).json({ ok: false, message: "No encontrado / no estaba en papelera" });
+        }
+
+        await tx.commit();
+        return res.json({ ok: true });
+      } catch (errTx) {
+        try { await tx.rollback(); } catch {}
+        console.error(errTx);
+        return res.status(500).json({ ok: false, message: errTx?.message || "Error eliminando definitivamente" });
       }
-
-      res.json({ ok: true });
     } catch (e) {
       console.error(e);
-      // Si hay llaves foráneas u otras restricciones, SQL Server lanzará error.
-      res.status(500).json({ ok: false, message: "Error eliminando definitivamente" });
+      return res.status(500).json({ ok: false, message: e?.message || "Error eliminando definitivamente" });
     }
   }
 );
