@@ -16,35 +16,45 @@ export default function ToastViewport({ toasts, onClose, position = "top-right" 
 
   return (
     <div className={`toast-viewport ${position}`} aria-live="polite" aria-relevant="additions">
-      {toasts.map((t) => (
-        <div key={t.id} className={`toast toast--${t.type}`} role={t.type === "error" ? "alert" : "status"}>
-          <div className="toast__bar" />
+      {toasts.map((t) => {
+        // 👇 si es confirm y trae variante (danger/primary), agrega clase extra
+        const confirmVariantClass =
+          t.type === "confirm" && t.confirmVariant ? `toast--confirm-${t.confirmVariant}` : "";
 
-          <div className="toast__head">
-            <div className="toast__title">{t.title}</div>
-            <button className="toast__close" onClick={() => closeToast(t)} aria-label="Cerrar">
-              ×
-            </button>
-          </div>
+        return (
+          <div
+            key={t.id}
+            className={`toast toast--${t.type} ${confirmVariantClass}`}
+            role={t.type === "error" ? "alert" : "status"}
+          >
+            <div className="toast__bar" />
 
-          <div className="toast__msg">{t.message}</div>
-
-          {/* Botones para confirm */}
-          {t.type === "confirm" && Array.isArray(t.actions) && (
-            <div className="toast__actions">
-              {t.actions.map((a, idx) => (
-                <button
-                  key={idx}
-                  className={`toast__btn ${a.variant === "primary" ? "toast__btn--primary" : "toast__btn--ghost"}`}
-                  onClick={() => action(t, a.value)}
-                >
-                  {a.label}
-                </button>
-              ))}
+            <div className="toast__head">
+              <div className="toast__title">{t.title}</div>
+              <button className="toast__close" onClick={() => closeToast(t)} aria-label="Cerrar">
+                ×
+              </button>
             </div>
-          )}
-        </div>
-      ))}
+
+            <div className="toast__msg">{t.message}</div>
+
+            {/* Botones para confirm */}
+            {t.type === "confirm" && Array.isArray(t.actions) && (
+              <div className="toast__actions">
+                {t.actions.map((a, idx) => (
+                  <button
+                    key={idx}
+                    className={`toast__btn toast__btn--${a.variant || "ghost"}`}
+                    onClick={() => action(t, a.value)}
+                  >
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

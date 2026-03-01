@@ -1,0 +1,387 @@
+/* ===== Layout que ya tenías ===== */
+.papeleraHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.papeleraTitle {
+  margin: 0;
+  flex: 1;
+}
+
+.papeleraCardInner {
+  margin-top: 10px;
+}
+
+.papeleraInfo {
+  margin-top: 6px;
+}
+
+.papeleraTableWrap {
+  margin-top: 10px;
+  overflow-x: auto;
+}
+
+.papeleraActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* =========================================================
+   ✅ LOOK INVENTARIO: botones verdes + tabla tipo inventario
+   (sin tocar lógica ni JSX)
+   ========================================================= */
+
+/* --- Botones verdes como Inventario --- */
+.papeleraHeader .btn,
+.papeleraActions .btn {
+  background: linear-gradient(180deg, var(--imss-700), var(--imss-900));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+
+.papeleraHeader .btn:hover,
+.papeleraActions .btn:hover {
+  filter: brightness(1.05);
+}
+
+/* Botón rojo danger igual que inventario */
+.papeleraActions .btn.danger {
+  background: linear-gradient(180deg, #b91c1c, #7f1d1d);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* nav-btn (Volver) como inventario */
+.papeleraHeader .nav-btn {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.papeleraHeader .nav-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+/* --- Tabla como Inventario (glass + bordes + zebra + hover) --- */
+.papeleraTableWrap {
+  border: 1px solid rgba(18, 120, 70, 0.20);
+  border-radius: 16px;
+  overflow: hidden; /* importante para que la tabla se recorte bonito */
+}
+
+/* Fondo “glass” detrás de la tabla */
+.papeleraTableWrap table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* Encabezados */
+.papeleraTableWrap thead th {
+  text-align: center;            /* igual que inventario */
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: rgba(6, 46, 34, 0.95);
+  background: rgba(255, 255, 255, 0.28);
+  border-bottom: 1px solid rgba(18, 120, 70, 0.22);
+}
+
+/* Celdas */
+.papeleraTableWrap tbody td {
+  text-align: left;
+  color: rgba(6, 46, 34, 0.88);
+  border-bottom: 1px solid rgba(18, 120, 70, 0.16);
+}
+
+/* Última fila sin borde inferior */
+.papeleraTableWrap tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Zebra suave */
+.papeleraTableWrap tbody tr:nth-child(odd) td {
+  background: rgba(255, 255, 255, 0.16);
+}
+.papeleraTableWrap tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+/* Hover */
+.papeleraTableWrap tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+/* =========================================================
+   LOOK tipo INVENTARIO (barra de filtro + tabla verde agua)
+   Sin tocar lógica / JSX
+   ========================================================= */
+
+/* --- Barra de filtro (como el bloque blanco de Inventario) --- */
+.papeleraCardInner {
+  margin-top: 12px;
+
+  /* “tarjeta blanca” ancha */
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  padding: 16px 18px;
+
+  /* que se sienta más “larga” */
+  width: 100%;
+}
+
+.papeleraCardInner > label {
+  display: block;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.70);
+  margin-bottom: 8px;
+}
+
+/* input largo como Inventario */
+.papeleraCardInner input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  background: rgba(255, 255, 255, 0.95);
+  outline: none;
+}
+
+.papeleraCardInner input:focus {
+  border-color: rgba(16, 185, 129, 0.55);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+}
+
+/* los textos informativos dentro del filtro */
+.papeleraCardInner .papeleraInfo {
+  margin-top: 10px;
+  color: rgba(0, 0, 0, 0.62);
+}
+
+/* --- Tabla verde agua como Inventario --- */
+.papeleraTableWrap {
+  margin-top: 14px;
+  overflow-x: auto;
+
+  /* “panel” verde agua */
+  background: rgba(170, 215, 204, 0.55); /* base mint */
+  border: 1px solid rgba(20, 83, 45, 0.20);
+  border-radius: 16px;
+  padding: 10px;
+}
+
+/* la tabla adentro con bordes redondeados */
+.papeleraTableWrap .table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+
+  background: rgba(170, 215, 204, 0.40);
+  border: 1px solid rgba(20, 83, 45, 0.18);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* encabezado más marcado (verde suave) */
+.papeleraTableWrap .table thead th {
+  text-align: center;
+  font-weight: 800;
+  color: rgba(6, 46, 34, 0.92);
+
+  background: rgba(145, 198, 182, 0.70);
+  border-bottom: 1px solid rgba(20, 83, 45, 0.18);
+
+  padding: 12px 10px;
+  white-space: nowrap;
+}
+
+/* celdas */
+.papeleraTableWrap .table tbody td {
+  padding: 12px 10px;
+  color: rgba(6, 46, 34, 0.82);
+  border-bottom: 1px solid rgba(20, 83, 45, 0.10);
+}
+
+/* zebra mint suave */
+.papeleraTableWrap .table tbody tr:nth-child(odd) td {
+  background: rgba(170, 215, 204, 0.34);
+}
+.papeleraTableWrap .table tbody tr:nth-child(even) td {
+  background: rgba(170, 215, 204, 0.22);
+}
+
+/* hover como inventario */
+.papeleraTableWrap .table tbody tr:hover td {
+  background: rgba(170, 215, 204, 0.48);
+}
+
+/* --- Botones verdes ya los tienes, pero aseguro el “look inventario” --- */
+.papeleraHeader .btn,
+.papeleraActions .btn {
+  background: linear-gradient(180deg, #0f766e, #0b5f57);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+.papeleraHeader .btn:hover,
+.papeleraActions .btn:hover {
+  filter: brightness(1.05);
+}
+
+.papeleraActions .btn.danger {
+  background: linear-gradient(180deg, #b91c1c, #7f1d1d);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+/* =========================================================
+   PAPELERA "TODO VERDE" como Inventario (solo CSS)
+   Se aplica al .card raíz que contiene .papeleraHeader
+   ========================================================= */
+
+/* Card raíz (toda la vista) en verde agua */
+.card:has(> .papeleraHeader) {
+  background: linear-gradient(180deg, rgba(184, 226, 214, 0.85), rgba(120, 180, 165, 0.55));
+  border: 1px solid rgba(20, 83, 45, 0.20);
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.12);
+}
+
+/* Header (no blanco) */
+.card:has(> .papeleraHeader) .papeleraHeader {
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(20, 83, 45, 0.18);
+}
+
+/* ===== Bloque de filtro: quitar blanco y hacerlo verde ===== */
+.card:has(> .papeleraHeader) .papeleraCardInner {
+  margin-top: 14px;
+  background: rgba(170, 215, 204, 0.50);
+  border: 1px solid rgba(20, 83, 45, 0.16);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+/* Texto del filtro */
+.card:has(> .papeleraHeader) .papeleraCardInner > label {
+  display: block;
+  font-weight: 800;
+  color: rgba(6, 46, 34, 0.92);
+  margin-bottom: 8px;
+}
+
+/* Input tipo inventario (claro pero sobre verde) */
+.card:has(> .papeleraHeader) .papeleraCardInner input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(20, 83, 45, 0.18);
+  background: rgba(255, 255, 255, 0.55);
+  outline: none;
+}
+
+.card:has(> .papeleraHeader) .papeleraCardInner input:focus {
+  border-color: rgba(16, 185, 129, 0.55);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18);
+}
+
+/* Info debajo del filtro */
+.card:has(> .papeleraHeader) .papeleraInfo {
+  color: rgba(6, 46, 34, 0.72);
+}
+
+/* ===== Tabla: panel verde agua como inventario ===== */
+.card:has(> .papeleraHeader) .papeleraTableWrap {
+  margin-top: 14px;
+  overflow-x: auto;
+  background: rgba(170, 215, 204, 0.50);
+  border: 1px solid rgba(20, 83, 45, 0.18);
+  border-radius: 16px;
+  padding: 10px;
+}
+
+/* Tabla adentro */
+.card:has(> .papeleraHeader) .papeleraTableWrap .table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: rgba(170, 215, 204, 0.35);
+  border: 1px solid rgba(20, 83, 45, 0.16);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* Header tabla */
+.card:has(> .papeleraHeader) .papeleraTableWrap .table thead th {
+  text-align: center;
+  font-weight: 800;
+  color: rgba(6, 46, 34, 0.92);
+  background: rgba(145, 198, 182, 0.75);
+  border-bottom: 1px solid rgba(20, 83, 45, 0.18);
+  padding: 12px 10px;
+  white-space: nowrap;
+}
+
+/* Celdas */
+.card:has(> .papeleraHeader) .papeleraTableWrap .table tbody td {
+  padding: 12px 10px;
+  color: rgba(6, 46, 34, 0.82);
+  border-bottom: 1px solid rgba(20, 83, 45, 0.10);
+}
+
+/* Zebra + hover */
+.card:has(> .papeleraHeader) .papeleraTableWrap .table tbody tr:nth-child(odd) td {
+  background: rgba(170, 215, 204, 0.34);
+}
+.card:has(> .papeleraHeader) .papeleraTableWrap .table tbody tr:nth-child(even) td {
+  background: rgba(170, 215, 204, 0.22);
+}
+.card:has(> .papeleraHeader) .papeleraTableWrap .table tbody tr:hover td {
+  background: rgba(170, 215, 204, 0.48);
+}
+
+/* ===== Botones verdes “inventario style” (sin tocar lógica) ===== */
+.card:has(> .papeleraHeader) .btn {
+  background: linear-gradient(180deg, #0f766e, #0b5f57);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+.card:has(> .papeleraHeader) .btn:hover {
+  filter: brightness(1.05);
+}
+
+/* Botón rojo eliminar */
+.card:has(> .papeleraHeader) .btn.danger {
+  background: linear-gradient(180deg, #b91c1c, #7f1d1d);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+/* Botón volver (nav-btn) también integrado al verde */
+.card:has(> .papeleraHeader) .nav-btn {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.92);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+.card:has(> .papeleraHeader) .nav-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.28);
+}

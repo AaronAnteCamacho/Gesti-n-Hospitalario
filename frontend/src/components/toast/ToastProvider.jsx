@@ -16,59 +16,75 @@ export function ToastProvider({ children, defaultDuration = 2600, position = "to
   }, []);
 
   const show = useCallback(
-    ({ type = "info", title = "Notificación", message = "", duration }) => {
+    (toast) => {
       const id = uid();
-      const d = typeof duration === "number" ? duration : defaultDuration;
+      const duration = toast.duration ?? defaultDuration;
 
       setToasts((prev) => [
         ...prev,
-        { id, type, title, message, duration: d, createdAt: Date.now() },
+        {
+          id,
+          type: toast.type || "info",
+          title: toast.title || "Notificación",
+          message: toast.message || "",
+          duration,
+          createdAt: Date.now(),
+          ...toast,
+        },
       ]);
 
-      // autoclose
-      if (d > 0) setTimeout(() => remove(id), d);
+      if (duration && duration > 0) {
+        window.setTimeout(() => remove(id), duration);
+      }
 
       return id;
     },
     [defaultDuration, remove]
   );
 
+  const api = useMemo(
+    () => ({
+      show,
+      success: (message, opts = {}) =>
+        show({ type: "success", title: "Notificación", message, ...opts }),
+      error: (message, opts = {}) => show({ type: "error", title: "Notificación", message, ...opts }),
+      info: (message, opts = {}) => show({ type: "info", title: "Notificación", message, ...opts }),
 
-const api = useMemo(
-  () => ({
-    show,
-    success: (message, opts = {}) => show({ type: "success", title: "Notificación", message, ...opts }),
-    error: (message, opts = {}) => show({ type: "error", title: "Notificación", message, ...opts }),
-    info: (message, opts = {}) => show({ type: "info", title: "Notificación", message, ...opts }),
+      // confirmación con Promise
+      confirm: (message, opts = {}) =>
+        new Promise((resolve) => {
+          const id = uid();
 
-    // confirmación con Promise
-    confirm: (message, opts = {}) =>
-      new Promise((resolve) => {
-        const id = uid();
+          const okVariant = opts.okVariant || "primary";
+          const cancelVariant = opts.cancelVariant || "ghost";
 
-        setToasts((prev) => [
-          ...prev,
-          {
-            id,
-            type: "confirm",
-            title: opts.title || "Confirmación",
-            message,
-            duration: 0, //no se cierra solo
-            createdAt: Date.now(),
-            onResolve: resolve,
-            actions: [
-              { label: opts.cancelText || "Cancelar", value: false, variant: "ghost" },
-              { label: opts.okText || "Aceptar", value: true, variant: "primary" },
-            ],
-          },
-        ]);
-      }),
+          setToasts((prev) => [
+            ...prev,
+            {
+              id,
+              type: "confirm",
+              title: opts.title || "Confirmación",
+              message,
+              duration: 0, // no se cierra solo
+              createdAt: Date.now(),
+              onResolve: resolve,
 
-    remove,
-    clear: () => setToasts([]),
-  }),
-  [show, remove]
-);
+              // 👇 esto controla el color del encabezado/franja del confirm
+              confirmVariant: okVariant === "danger" ? "danger" : "primary",
+
+              actions: [
+                { label: opts.cancelText || "Cancelar", value: false, variant: cancelVariant },
+                { label: opts.okText || "Aceptar", value: true, variant: okVariant },
+              ],
+            },
+          ]);
+        }),
+
+      remove,
+      clear: () => setToasts([]),
+    }),
+    [show, remove]
+  );
 
   return (
     <ToastCtx.Provider value={api}>
@@ -79,7 +95,5 @@ const api = useMemo(
 }
 
 export function useToast() {
-  const ctx = useContext(ToastCtx);
-  if (!ctx) throw new Error("useToast debe usarse dentro de <ToastProvider>.");
-  return ctx;
+  return useContext(ToastCtx);
 }

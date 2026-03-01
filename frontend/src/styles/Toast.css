@@ -1,4 +1,4 @@
-.toast-viewport{
+toast-viewport{
   position: fixed;
   z-index: 9999;
   width: min(360px, calc(100vw - 24px));
@@ -15,11 +15,11 @@
 .toast{
   border-radius: 3px;
   background: #fff;
-  box-shadow: 0 10px 26px rgba(0,0,0,.20);
+  box-shadow: 0 10px 26px rgba(0,0,0,20);
   overflow: hidden;
   transform-origin: top right;
   animation: toastIn .12s ease-out;
-  border: 1px solid rgba(0,0,0,.08);
+  border: 1px solid rgba(0,0,0,08);
 }
 
 @keyframes toastIn{
@@ -27,7 +27,7 @@
   to{ transform: translateY(0); opacity: 1; }
 }
 
-/* franja arriba (como tu ejemplo) */
+/* franja arriba */
 .toast__bar{ height: 10px; }
 
 .toast__head{
@@ -52,15 +52,15 @@
 .toast__close{
   border: 0;
   background: transparent;
-  color: rgba(255,255,255,.9);
+  color: rgba(255,255,255,9);
   font-size: 16px;
   cursor: pointer;
   line-height: 1;
 }
 
-/* colores */
+/* colores base */
 .toast--success .toast__bar,
-.toast--success .toast__head{ background: #0b6b43; } /* verde IMSS-ish */
+.toast--success .toast__head{ background: #0b6b43; } /* verde */
 
 .toast--error .toast__bar,
 .toast--error .toast__head{ background: #c81e1e; }  /* rojo */
@@ -69,7 +69,7 @@
 .toast--info .toast__head{ background: #2563eb; }   /* azul */
 
 
-/* ====== TOAST dentro del MODAL (no fixed) ====== */
+/* ====== TOAST dentro del MODAL (si lo usas) ====== */
 .toast-viewport--modal{
   position: absolute;
   top: 12px;
@@ -77,7 +77,7 @@
   z-index: 9999999;
 }
 
-/* el global se queda fixed */
+/* el global fixed */
 .toast-viewport--fixed{
   position: fixed;
   top: 10px;
@@ -85,18 +85,9 @@
   z-index: 9999;
 }
 
-/* ===== Confirm toast (azul) ===== */
-.toast--confirm{
-  border: 1px solid rgba(0,0,0,.08); /* igual que los demás */
-}
-
-.toast--confirm .toast__bar,
-.toast--confirm .toast__head{
-  background: #2563eb; /* mismo azul que .toast--info */
-}
 /* acciones */
 .toast__actions{
-  padding: 0 10px 10px;   /* en vez de margin-top */
+  padding: 0 10px 10px;
   display: flex;
   gap: 8px;
   justify-content: flex-end;
@@ -108,7 +99,7 @@
   border-radius: 10px;
   padding: 7px 12px;
   cursor: pointer;
-  border: 1px solid rgba(0,0,0,.10);
+  border: 1px solid rgba(0,0,0,10);
   background: #f3f4f6;
   color: #111827;
 }
@@ -116,16 +107,63 @@
 .toast__btn--ghost{
   background: transparent;
   border: none;
-  color: rgba(0,0,0,.70);
+  color: rgba(0,0,0,70);
 }
 
 .toast__btn--primary{
-  background: #2563eb; /* mismo azul info */
-  border-color: rgba(37,99,235,.35);
+  background: #2563eb; /* azul */
+  border-color: rgba(37,99,235,35);
   color: #fff;
 }
 .toast__btn--primary:hover{ filter: brightness(1.05); }
 
 .toast, .toast__btn{
   font-family: inherit;
+}
+
+/* botón rojo explícito (por si alguna vez lo usas) */
+.toast__btn--danger{
+  background: linear-gradient(180deg, #b91c1c, #7f1d1d);
+  border: 1px solid rgba(255,255,255,0.14);
+  color: #fff;
+}
+.toast__btn--danger:hover{
+  filter: brightness(1.05);
+}
+
+/* =========================================================
+   ✅ FORZAR TODO CONFIRM A ROJO (SIN TOCAR LÓGICA)
+   ========================================================= */
+.toast--confirm{
+  border: 1px solid rgba(0,0,0,08);
+}
+
+/* Encabezado + franja en rojo SIEMPRE */
+.toast--confirm .toast__bar,
+.toast--confirm .toast__head{
+  background: #c81e1e !important;
+}
+
+/* El botón principal dentro de confirm en rojo (aunque sea primary) */
+.toast--confirm .toast__btn--primary{
+  background: linear-gradient(180deg, #b91c1c, #7f1d1d) !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  color: #fff !important;
+}
+.toast--confirm .toast__btn--primary:hover{
+  filter: brightness(1.05);
+}
+
+/* Si también cae como danger, igual rojo */
+.toast--confirm .toast__btn--danger{
+  background: linear-gradient(180deg, #b91c1c, #7f1d1d) !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  color: #fff !important;
+}
+
+/* (opcional) mantener el cancelar neutro */
+.toast--confirm .toast__btn--ghost{
+  background: transparent;
+  border: none;
+  color: rgba(0,0,0,70);
 }

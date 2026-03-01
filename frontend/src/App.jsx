@@ -1039,7 +1039,12 @@ if (tipo === "excel") {
       return <PerfilUsuarios />
     }
     if (view === 'papelera') {
-      return <Papelera auth={auth} onBack={() => setView('inventario')} onRestored={() => loadInventario()} />
+      return <Papelera
+  auth={auth}
+  toast={toast}
+  onBack={() => setView("inventario")}
+  onRestored={() => loadInventario()}
+/>
     }
     return (
       <Formulario
