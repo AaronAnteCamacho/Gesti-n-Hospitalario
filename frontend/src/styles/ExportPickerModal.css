@@ -1,0 +1,41 @@
+.exportPickerGrid{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  padding: 18px;
+}
+
+.exportPickerChoice{
+  border: 2px dashed rgba(0,0,0,.18);
+  border-radius: 18px;
+  background: rgba(255,255,255,.75);
+  cursor: pointer;
+  padding: 18px;
+  min-height: 220px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+
+  transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease;
+}
+
+.exportPickerChoice:hover{
+  transform: translateY(-2px);
+  border-color: rgba(0,0,0,.28);
+  box-shadow: 0 10px 26px rgba(0,0,0,.10);
+}
+
+.exportPickerImg{
+  width: min(220px, 70%);
+  height: auto;
+  object-fit: contain;
+}
+
+.exportPickerLabel{
+  font-weight: 800;
+  letter-spacing: .08em;
+  opacity: .85;
+}
