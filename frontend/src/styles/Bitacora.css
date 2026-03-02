@@ -41,15 +41,20 @@
   filter: brightness(1.05);
 }
 
-/* Botones secundarios */
+/* Botones secundarios (mismo look que Inventario: verde IMSS) */
 .bitacora .nav-btn {
-  background: rgba(236, 0, 0, 0.12);
+  background: linear-gradient(180deg, var(--imss-700), var(--imss-900));
   border: 1px solid rgba(255, 255, 255, 0.14);
-  color: rgba(160, 14, 14, 0.92);
+  color: #fff;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
 }
+
 .bitacora .nav-btn:hover {
-  background: rgba(153, 29, 29, 0.16);
-  border-color: rgba(156, 22, 22, 0.28);
+  filter: brightness(1.05);
+}
+
+.bitacora .nav-btn:active {
+  transform: translateY(1px);
 }
 
 /* Card tabla */

@@ -778,32 +778,16 @@ export default function App() {
   }
 
   
-function downloadBitacora(b) {
+function downloadBitacora(b, tipo) {
   if (!b) return;
 
-  // ✅ En lugar de prompt (texto), abrimos una ventana (Modal) con botones
-  openModal('Descargar bitácora', (
-    <div style={{ display: 'grid', gap: 12, minWidth: 280 }}>
-      <div className="small muted">Elige el formato de descarga:</div>
+  // el modal nuevo manda "pdf" o "excel"
+  const t = String(tipo || "").toLowerCase();
 
-      <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-        <button
-          type="button"
-          className="btn"
-          onClick={() => { closeModal(); downloadBitacoraFile(b, 'pdf'); }}
-        >
-          PDF
-        </button>
-        <button
-          type="button"
-          className="btn"
-          onClick={() => { closeModal(); downloadBitacoraFile(b, 'excel'); }}
-        >
-          Excel
-        </button>
-      </div>
-    </div>
-  ));
+  if (t !== "pdf" && t !== "excel") return;
+
+  // tu función real que genera el archivo (ya la tienes)
+  downloadBitacoraFile(b, t);
 }
 
 

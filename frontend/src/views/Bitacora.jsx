@@ -1,7 +1,31 @@
-import React from "react";
+import React, { useState } from "react";
 import "../styles/Bitacora.css";
+import ExportPickerModal from "../components/ExportPickerModal.jsx";
 
 export default function Bitacora({ bitacoras, onNew, onOpen, onDownload }) {
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportTarget, setExportTarget] = useState(null);
+
+  function openExportModal(bitacora) {
+    setExportTarget(bitacora || null);
+    setExportOpen(true);
+  }
+
+  function closeExportModal() {
+    setExportOpen(false);
+    setExportTarget(null);
+  }
+
+  function handlePick(tipo) {
+    if (!exportTarget) return;
+
+    // Si tu onDownload(b) solo recibe 1 parámetro, NO se rompe:
+    // JS ignora argumentos extra.
+    onDownload?.(exportTarget, tipo);
+
+    closeExportModal();
+  }
+
   return (
     <section className="card bitacora">
       <div className="bitacora__header">
@@ -36,10 +60,14 @@ export default function Bitacora({ bitacoras, onNew, onOpen, onDownload }) {
                   <td>{b.items?.length || 0}</td>
                   <td>
                     <div className="bitacora__actions">
-                      <button className="nav-btn" onClick={() => onOpen(b)}>
+                      <button className="nav-btn" onClick={() => onOpen?.(b)}>
                         Abrir
                       </button>
-                      <button className="nav-btn" onClick={() => onDownload(b)}>
+
+                      <button
+                        className="nav-btn"
+                        onClick={() => openExportModal(b)}
+                      >
                         Descargar
                       </button>
                     </div>
@@ -56,6 +84,17 @@ export default function Bitacora({ bitacoras, onNew, onOpen, onDownload }) {
           </tbody>
         </table>
       </div>
+
+      <ExportPickerModal
+      open={exportOpen}
+      onClose={closeExportModal}
+      title="Descargar bitácora"
+        onPick={(tipo) => {
+          if (!exportTarget) return;
+          onDownload?.(exportTarget, tipo);
+          closeExportModal();
+        }}
+      />
     </section>
   );
 }
