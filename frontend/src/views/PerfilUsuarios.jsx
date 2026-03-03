@@ -9,9 +9,16 @@ function getAuth() {
   }
 }
 
-export default function PerfilUsuariosView() {
-  const auth = useMemo(() => getAuth(), []);
+export default function PerfilUsuariosView({ auth: authProp, toast }) {
+  const auth = useMemo(() => authProp || getAuth(), [authProp]);
   const isJefe = auth?.rol === "jefe";
+
+  const t = toast || {
+    success: (m) => alert(m),
+    error: (m) => alert(m),
+    info: (m) => alert(m),
+    confirm: async (m) => confirm(m),
+  };
 
   const [loading, setLoading] = useState(false);
   const [usuarios, setUsuarios] = useState([]);
@@ -34,15 +41,15 @@ export default function PerfilUsuariosView() {
 
   useEffect(() => {
     if (!isJefe) return;
-    loadUsuarios().catch((e) => alert(e.message));
+    loadUsuarios().catch((e) => t.error(e.message));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function onCreate(e) {
     e.preventDefault();
-    if (!nombre.trim()) return alert("Falta nombre");
-    if (!correo.trim()) return alert("Falta correo");
-    if (!password) return alert("Falta contraseña");
+    if (!nombre.trim()) return t.error("Falta nombre");
+    if (!correo.trim()) return t.error("Falta correo");
+    if (!password) return t.error("Falta contraseña");
 
     try {
       setLoading(true);
@@ -62,25 +69,30 @@ export default function PerfilUsuariosView() {
       setRol("empleado");
       setShowForm(false);
       await loadUsuarios();
-      alert("Usuario creado.");
+      t.success("Usuario creado.");
     } catch (e2) {
-      alert(e2.message);
+      t.error(e2.message);
     } finally {
       setLoading(false);
     }
   }
 
   async function onDelete(u) {
-    const ok = confirm(`¿Seguro que quieres eliminar a "${u.nombre}" (${u.correo})?`);
+    const ok = await t.confirm(`¿Seguro que quieres eliminar a "${u.nombre}" (${u.correo})?`, {
+      title: "Confirmar eliminación",
+      okText: "Eliminar",
+      cancelText: "Cancelar",
+      okVariant: "danger",
+    });
     if (!ok) return;
 
     try {
       setLoading(true);
       await apiFetch(`/api/usuarios/${u.id_usuario}`, { method: "DELETE" });
       await loadUsuarios();
-      alert("Usuario eliminado.");
+      t.success("Usuario eliminado.");
     } catch (e) {
-      alert(e.message);
+      t.error(e.message);
     } finally {
       setLoading(false);
     }

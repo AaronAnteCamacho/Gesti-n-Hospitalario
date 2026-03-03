@@ -3,7 +3,9 @@ import Modal from "./Modal.jsx";
 import { apiFetch } from "../services/api.js";
 
 function isValidEmail(v) {
-  return /.+@.+\..+/.test(String(v || "").trim());
+  const s = String(v || "").trim();
+  // correo simple y decente (sin espacios)
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s);
 }
 
 export default function ProfileModal({
@@ -12,7 +14,7 @@ export default function ProfileModal({
   auth,
   onAuthUpdate,
   toast,
-  ToastViewport, // ✅ nuevo
+  ToastViewport,
 }) {
   const [meLoading, setMeLoading] = useState(false);
   const [meNombre, setMeNombre] = useState("");
@@ -27,7 +29,7 @@ export default function ProfileModal({
   };
 
   async function loadMe() {
-    if (!auth?.token) return;
+    // ✅ NO dependas de auth.token, apiFetch toma el token de localStorage
     setMeLoading(true);
     try {
       const r = await apiFetch("/api/usuarios/me");
@@ -36,6 +38,8 @@ export default function ProfileModal({
       setMeCorreo(d.correo || "");
       setMeRol(d.rol || auth?.rol || "");
       setMeNewPass("");
+    } catch (e) {
+      notify.error(e?.message || "No se pudo cargar el perfil");
     } finally {
       setMeLoading(false);
     }
@@ -44,27 +48,38 @@ export default function ProfileModal({
   async function saveMe(e) {
     e?.preventDefault?.();
 
-    if (!meNombre.trim()) return notify.error("El nombre es obligatorio.");
-    if (!meCorreo.trim()) return notify.error("El correo es obligatorio.");
-    if (!isValidEmail(meCorreo)) return notify.error("Correo inválido.");
+    const nombre = meNombre.trim();
+    const correo = meCorreo.trim();
+
+    if (!nombre) return notify.error("El nombre es obligatorio.");
+    if (!correo) return notify.error("El correo es obligatorio.");
+    if (!isValidEmail(correo)) return notify.error("Correo inválido.");
+
+    // ✅ contraseña opcional, pero si la escribe validamos mínimo
+    if (meNewPass && meNewPass.length < 6) {
+      return notify.error("La contraseña debe tener al menos 6 caracteres.");
+    }
 
     setMeLoading(true);
     try {
       const r = await apiFetch("/api/usuarios/me", {
         method: "PUT",
         body: JSON.stringify({
-          nombre: meNombre.trim(),
-          correo: meCorreo.trim(),
+          nombre,
+          correo,
           ...(meNewPass ? { password: meNewPass } : {}),
+          // ⚠️ NO mandamos rol
         }),
       });
 
       const updated = r?.data || null;
 
+      // ✅ actualiza auth en memoria/localStorage (sin tocar token)
       const nextAuth = {
         ...(auth || {}),
-        nombre: updated?.nombre ?? meNombre.trim(),
-        correo: updated?.correo ?? meCorreo.trim(),
+        nombre: updated?.nombre ?? nombre,
+        correo: updated?.correo ?? correo,
+        rol: updated?.rol ?? (auth?.rol || meRol || ""),
       };
 
       try {
@@ -81,27 +96,37 @@ export default function ProfileModal({
     }
   }
 
+  // ✅ cada vez que abras el modal, trae datos reales desde BD
   useEffect(() => {
     if (!open) return;
-    loadMe().catch((e) => notify.error(e.message));
+    loadMe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   return (
     <Modal open={open} title="Editar perfil" onClose={onClose}>
-      {/* ✅ Toast dentro del modal */}
       {open && ToastViewport ? <ToastViewport scope="modal" /> : null}
 
       <form onSubmit={saveMe}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           <div>
             <label>Nombre</label>
-            <input value={meNombre} onChange={(e) => setMeNombre(e.target.value)} placeholder="Tu nombre" />
+            <input
+              value={meNombre}
+              onChange={(e) => setMeNombre(e.target.value)}
+              placeholder="Tu nombre"
+              disabled={meLoading}
+            />
           </div>
 
           <div>
             <label>Correo</label>
-            <input value={meCorreo} onChange={(e) => setMeCorreo(e.target.value)} placeholder="correo@..." />
+            <input
+              value={meCorreo}
+              onChange={(e) => setMeCorreo(e.target.value)}
+              placeholder="correo@..."
+              disabled={meLoading}
+            />
           </div>
 
           <div>
@@ -111,7 +136,13 @@ export default function ProfileModal({
 
           <div>
             <label>Nueva contraseña (opcional)</label>
-            <input value={meNewPass} onChange={(e) => setMeNewPass(e.target.value)} type="password" placeholder="••••••" />
+            <input
+              value={meNewPass}
+              onChange={(e) => setMeNewPass(e.target.value)}
+              type="password"
+              placeholder="••••••"
+              disabled={meLoading}
+            />
           </div>
         </div>
 

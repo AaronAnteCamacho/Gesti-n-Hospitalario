@@ -8,7 +8,7 @@ import logoRight from "../assets/logo_right.png";
 import reporteFallaIcon from "../assets/reporte_falla.png";
 import editIcon from "../assets/edit_icon.png";
 import recyclingIcon from "../assets/recycling_icon.png";
-import html2pdf from "html2pdf.js";
+// import html2pdf from "html2pdf.js";
 
 function norm(s) {
   return String(s || "")

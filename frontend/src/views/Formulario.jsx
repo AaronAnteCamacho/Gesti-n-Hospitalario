@@ -32,7 +32,16 @@ export default function Formulario({
   setPendientes,
   terminados,
   setTerminados,
+  toast,
 }) {
+  // fallback si no llega toast
+  const t = toast || {
+    success: (m) => alert(m),
+    error: (m) => alert(m),
+    info: (m) => alert(m),
+    confirm: async (m) => confirm(m),
+  }
+
   const [tab, setTab] = useState('pendientes')
   const [q, setQ] = useState('')
 
@@ -60,8 +69,8 @@ export default function Formulario({
   const filteredTerminados = useMemo(() => {
     const s = (q || '').toLowerCase().trim()
     if (!s) return terminados || []
-    return (terminados || []).filter((t) => {
-      const blob = `${t?.inventario || ''} ${t?.nombre || ''} ${t?.serie || ''} ${t?.area || ''} ${t?.tecnico || ''}`
+    return (terminados || []).filter((tt) => {
+      const blob = `${tt?.inventario || ''} ${tt?.nombre || ''} ${tt?.serie || ''} ${tt?.area || ''} ${tt?.tecnico || ''}`
         .toLowerCase()
       return blob.includes(s)
     })
@@ -75,7 +84,6 @@ export default function Formulario({
   }
 
   function openCreateFromPendiente(p) {
-    // Buscar el equipo real en la tabla de equipos (inventario) por No. inventario.
     const invNum = String(p?.inventario ?? '').trim()
     const eq = (inventario || []).find((e) => String(e?.numero_inventario ?? '').trim() === invNum)
 
@@ -90,67 +98,72 @@ export default function Formulario({
 
     setSvc((s) => ({
       ...s,
-      // Prioridad: datos reales de equipos; si no existe, usa lo del pendiente.
       area: eq?.nombre_area || p?.area || s.area,
       equipo: eq?.nombre_equipo || p?.nombre || '',
       marca: eq?.marca || s.marca,
       modelo: eq?.modelo || s.modelo,
       serie: eq?.numero_serie || p?.serie || s.serie,
       inv: eq?.numero_inventario || p?.inventario || '',
-      // Si el pendiente trae fecha, úsala como inicio; si no, hoy.
       inicio: (p?.fecha && String(p.fecha).length >= 8) ? p.fecha : todayISO(),
-      // Si en el reporte de falla guardaste observaciones, úsalo como falla.
       falla: fallaTxt || s.falla,
+      // actividades NO se rellena desde pendientes normalmente (se llena al atender)
     }))
 
     setFormOpen(true)
   }
 
-  function openEditTerminado(t, idx) {
+  function openEditTerminado(t0, idx) {
     setFormMode('edit')
     setEditIndex(idx)
 
     setSvc({
-      area: t?.area || '—',
-      inicio: t?.inicio || todayISO(),
-      equipo: t?.nombre || '',
-      marca: t?.marca || '',
-      modelo: t?.modelo || '',
-      serie: t?.serie || '',
-      inv: t?.inventario || '',
-      falla: t?.falla || '',
-      actividades: t?.actividades || '',
-      refacciones: t?.refacciones || '',
-      observaciones: t?.observaciones || '',
-      tecnico: t?.tecnico || '',
+      area: t0?.area || '—',
+      inicio: t0?.inicio || todayISO(),
+      equipo: t0?.nombre || '',
+      marca: t0?.marca || '',
+      modelo: t0?.modelo || '',
+      serie: t0?.serie || '',
+      inv: t0?.inventario || '',
+      falla: t0?.falla || '',
+      actividades: t0?.actividades || '',
+      refacciones: t0?.refacciones || '',
+      observaciones: t0?.observaciones || '',
+      tecnico: t0?.tecnico || '',
     })
 
     setFormOpen(true)
   }
 
-  function openDeletePrompt(kind, item) {
-    const ok = confirm('¿Seguro que deseas eliminar este registro?')
+  async function openDeletePrompt(kind, item) {
+    const ok = await t.confirm('¿Seguro que deseas eliminar este registro?', {
+      title: 'Confirmación',
+      okText: 'Eliminar',
+      cancelText: 'Cancelar',
+      okVariant: 'danger',
+    })
     if (!ok) return
 
     if (kind === 'pendientes') {
-      // Eliminar por referencia (evita borrar el equivocado si hay filtro/búsqueda)
       setPendientes((prev) => (prev || []).filter((p) => p !== item))
-      alert('Pendiente eliminado.')
+      t.success('Pendiente eliminado.')
       return
     }
 
     if (kind === 'terminados') {
-      setTerminados((prev) => (prev || []).filter((t) => t !== item))
-      alert('Terminado eliminado.')
+      setTerminados((prev) => (prev || []).filter((x) => x !== item))
+      t.success('Terminado eliminado.')
     }
   }
 
   function saveService() {
-    // validaciones mínimas
-    if (!svc.inv?.trim()) return alert('Falta No. de inventario')
-    if (!svc.equipo?.trim()) return alert('Falta nombre del equipo')
-    if (!svc.inicio?.trim()) return alert('Falta fecha de inicio')
-    if (!svc.tecnico?.trim()) return alert('Falta técnico responsable')
+    if (!svc.inv?.trim()) return t.error('Falta No. de inventario')
+    if (!svc.equipo?.trim()) return t.error('Falta nombre del equipo')
+    if (!svc.inicio?.trim()) return t.error('Falta fecha de inicio')
+    if (!svc.tecnico?.trim()) return t.error('Falta técnico responsable')
+
+    // ✅ NUEVO: validación de ambos flujos (Crear desde pendientes / Editar terminados)
+    if (!svc.falla?.trim()) return t.error('Falta la falla reportada')
+    if (!svc.actividades?.trim()) return t.error('Faltan las actividades realizadas')
 
     const registro = {
       serie: svc.serie?.trim() || 'S/N',
@@ -158,14 +171,12 @@ export default function Formulario({
       inicio: svc.inicio,
       area: svc.area,
       inventario: svc.inv,
-
       marca: svc.marca,
       modelo: svc.modelo,
       falla: svc.falla,
       actividades: svc.actividades,
       refacciones: svc.refacciones,
       observaciones: svc.observaciones,
-
       tecnico: svc.tecnico,
       fecha_termino: todayISO(),
     }
@@ -176,25 +187,21 @@ export default function Formulario({
         list[editIndex] = { ...(list[editIndex] || {}), ...registro }
         return list
       })
-      alert('Terminado actualizado.')
+      t.success('Terminado actualizado.')
       setFormOpen(false)
       resetService()
       return
     }
 
-    // create: mover a terminados y (si quieres) eliminar de pendientes
     setTerminados((prev) => [registro, ...(prev || [])])
 
-    // Si este formulario salió de un pendiente, lo quitamos de pendientes.
     if (fromPendienteRef) {
       setPendientes((prev) => (prev || []).filter((p) => p !== fromPendienteRef))
     }
 
-    alert('Formulario guardado en Terminados.')
+    t.success('Formulario guardado en Terminados.')
     setFormOpen(false)
     resetService()
-
-    // Cambia automáticamente al tab de Terminados
     setTab('terminados')
   }
 
@@ -209,7 +216,6 @@ export default function Formulario({
         </div>
       </div>
 
-      {/* Tabs + tablas */}
       <div className="card formulario__tabsCard">
         <div className="tabs">
           <button
@@ -227,11 +233,7 @@ export default function Formulario({
 
           <div style={{ flex: 1 }} />
 
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar..."
-          />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar..." />
         </div>
 
         {tab === 'pendientes' ? (
@@ -295,20 +297,20 @@ export default function Formulario({
 
             <tbody>
               {filteredTerminados?.length ? (
-                filteredTerminados.map((t, idx) => (
+                filteredTerminados.map((t0, idx) => (
                   <tr key={idx}>
-                    <td>{t.serie}</td>
-                    <td>{t.nombre}</td>
-                    <td>{t.fecha_termino}</td>
-                    <td>{t.area}</td>
-                    <td>{t.inventario}</td>
-                    <td>{t.tecnico}</td>
+                    <td>{t0.serie}</td>
+                    <td>{t0.nombre}</td>
+                    <td>{t0.fecha_termino}</td>
+                    <td>{t0.area}</td>
+                    <td>{t0.inventario}</td>
+                    <td>{t0.tecnico}</td>
                     <td>
                       <div className="formulario__rowActions">
-                        <button className="btn" onClick={() => openEditTerminado(t, idx)}>
+                        <button className="btn" onClick={() => openEditTerminado(t0, idx)}>
                           Editar
                         </button>
-                        <button className="nav-btn" onClick={() => openDeletePrompt('terminados', t)}>
+                        <button className="nav-btn" onClick={() => openDeletePrompt('terminados', t0)}>
                           Eliminar
                         </button>
                       </div>
@@ -327,7 +329,6 @@ export default function Formulario({
         )}
       </div>
 
-      {/* Modal: formulario */}
       <Modal open={formOpen} title="Orden de servicio" onClose={() => setFormOpen(false)}>
         <div id="servicePreview">
           <div className="formulario__previewHeader">
@@ -353,52 +354,60 @@ export default function Formulario({
           <div className="form-grid">
             <div>
               <label>Área</label>
-              <input value={svc.area} onChange={(e) => setSvc(s => ({ ...s, area: e.target.value }))} />
+              <input value={svc.area} onChange={(e) => setSvc((s) => ({ ...s, area: e.target.value }))} />
             </div>
 
             <div>
               <label>Fecha de inicio</label>
-              <input type="date" value={svc.inicio} onChange={(e) => setSvc(s => ({ ...s, inicio: e.target.value }))} />
+              <input type="date" value={svc.inicio} onChange={(e) => setSvc((s) => ({ ...s, inicio: e.target.value }))} />
             </div>
 
             <div>
               <label>Equipo</label>
-              <input value={svc.equipo} onChange={(e) => setSvc(s => ({ ...s, equipo: e.target.value }))} />
+              <input value={svc.equipo} onChange={(e) => setSvc((s) => ({ ...s, equipo: e.target.value }))} />
             </div>
 
             <div>
               <label>Marca / Modelo / Serie / No. Inventario</label>
               <div className="formulario__tripleRow">
-                <input value={svc.marca} onChange={(e) => setSvc(s => ({ ...s, marca: e.target.value }))} placeholder="Marca" />
-                <input value={svc.modelo} onChange={(e) => setSvc(s => ({ ...s, modelo: e.target.value }))} placeholder="Modelo" />
-                <input value={svc.serie} onChange={(e) => setSvc(s => ({ ...s, serie: e.target.value }))} placeholder="Serie" />
-                <input value={svc.inv} onChange={(e) => setSvc(s => ({ ...s, inv: e.target.value }))} placeholder="Inventario" />
+                <input value={svc.marca} onChange={(e) => setSvc((s) => ({ ...s, marca: e.target.value }))} placeholder="Marca" />
+                <input value={svc.modelo} onChange={(e) => setSvc((s) => ({ ...s, modelo: e.target.value }))} placeholder="Modelo" />
+                <input value={svc.serie} onChange={(e) => setSvc((s) => ({ ...s, serie: e.target.value }))} placeholder="Serie" />
+                <input value={svc.inv} onChange={(e) => setSvc((s) => ({ ...s, inv: e.target.value }))} placeholder="Inventario" />
               </div>
             </div>
 
             <div>
               <label>Falla reportada</label>
-              <textarea value={svc.falla} onChange={(e) => setSvc(s => ({ ...s, falla: e.target.value }))} />
+              <textarea
+                value={svc.falla}
+                onChange={(e) => setSvc((s) => ({ ...s, falla: e.target.value }))}
+                placeholder="Describe la falla reportada..."
+              />
             </div>
 
             <div>
               <label>Actividades realizadas</label>
-              <textarea value={svc.actividades} onChange={(e) => setSvc(s => ({ ...s, actividades: e.target.value }))} />
+              <textarea
+                value={svc.actividades}
+                onChange={(e) => setSvc((s) => ({ ...s, actividades: e.target.value }))}
+                placeholder="Describe las actividades realizadas..."
+              />
             </div>
 
             <div>
               <label>Refacciones</label>
-              <textarea value={svc.refacciones} onChange={(e) => setSvc(s => ({ ...s, refacciones: e.target.value }))} />
+              <textarea value={svc.refacciones} onChange={(e) => setSvc((s) => ({ ...s, refacciones: e.target.value }))} />
             </div>
 
             <div>
               <label>Observaciones</label>
-              <textarea value={svc.observaciones} onChange={(e) => setSvc(s => ({ ...s, observaciones: e.target.value }))} />
+              <textarea value={svc.observaciones} onChange={(e) => setSvc((s) => ({ ...s, observaciones: e.target.value }))} />
             </div>
 
             <div>
               <label>Técnico responsable</label>
-              <input value={svc.tecnico} onChange={(e) => setSvc(s => ({ ...s, tecnico: e.target.value }))} />
+              <input value={svc.tecnico} onChange={(e) => setSvc((s) => ({ ...s, tecnico: e.target.value }))} />
               <div className="formulario__signRow">
                 <div className="small muted">Firma de conformidad: _____________________</div>
                 <div className="small muted">Firma técnico: _____________________</div>

@@ -74,7 +74,7 @@ toast-viewport{
   position: absolute;
   top: 12px;
   right: 12px;
-  z-index: 9999999;
+  z-index: 2147483647 !important; /* ✅ MÁS ALTO POSIBLE */
 }
 
 /* el global fixed */
@@ -82,8 +82,9 @@ toast-viewport{
   position: fixed;
   top: 10px;
   right: 10px;
-  z-index: 9999;
+  z-index: 2147483647 !important; /* ✅ MÁS ALTO POSIBLE */
 }
+
 
 /* acciones */
 .toast__actions{
@@ -132,38 +133,30 @@ toast-viewport{
 }
 
 /* =========================================================
-   ✅ FORZAR TODO CONFIRM A ROJO (SIN TOCAR LÓGICA)
+   ✅ CONFIRM con variantes
+   - por defecto: primary (azul)
+   - danger: rojo
    ========================================================= */
 .toast--confirm{
   border: 1px solid rgba(0,0,0,08);
 }
 
-/* Encabezado + franja en rojo SIEMPRE */
+/* Por defecto (sin clase extra), usa el azul del primary */
 .toast--confirm .toast__bar,
 .toast--confirm .toast__head{
-  background: #c81e1e !important;
+  background: #2563eb;
 }
 
-/* El botón principal dentro de confirm en rojo (aunque sea primary) */
-.toast--confirm .toast__btn--primary{
-  background: linear-gradient(180deg, #b91c1c, #7f1d1d) !important;
-  border: 1px solid rgba(255,255,255,0.14) !important;
-  color: #fff !important;
-}
-.toast--confirm .toast__btn--primary:hover{
-  filter: brightness(1.05);
+/* Variante roja */
+.toast--confirm-danger .toast__bar,
+.toast--confirm-danger .toast__head{
+  background: #c81e1e;
 }
 
-/* Si también cae como danger, igual rojo */
-.toast--confirm .toast__btn--danger{
-  background: linear-gradient(180deg, #b91c1c, #7f1d1d) !important;
-  border: 1px solid rgba(255,255,255,0.14) !important;
-  color: #fff !important;
+/* En confirm-danger, si el botón principal viene como "primary" lo pintamos rojo */
+.toast--confirm-danger .toast__btn--primary{
+  background: linear-gradient(180deg, #b91c1c, #7f1d1d);
+  border: 1px solid rgba(255,255,255,0.14);
+  color: #fff;
 }
-
-/* (opcional) mantener el cancelar neutro */
-.toast--confirm .toast__btn--ghost{
-  background: transparent;
-  border: none;
-  color: rgba(0,0,0,70);
-}
+.toast--confirm-danger .toast__btn--primary:hover{ filter: brightness(1.05); }

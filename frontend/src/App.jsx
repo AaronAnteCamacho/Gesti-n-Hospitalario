@@ -101,67 +101,99 @@ export default function App() {
     return id
   }
 
-    // API simple para usar el sistema de Toasts desde cualquier componente
+  // API simple para usar el sistema de Toasts desde cualquier componente
   const toast = {
     success: (message, opts = {}) => pushToast('success', message, opts),
     error: (message, opts = {}) => pushToast('error', message, opts),
     info: (message, opts = {}) => pushToast('info', message, opts),
 
+    // ✅ confirm con variantes (primary / danger) y Promise
     confirm: (message, opts = {}) =>
-  new Promise((resolve) => {
-    const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`
-    const t = {
-      id,
-      type: "confirm",
-      title: opts.title || "Confirmación",
-      message,
-      duration: 0, // ✅ NO autoclose
-      actions: [
-        { label: opts.cancelText || "Cancelar", value: false, variant: "ghost" },
-        { label: opts.okText || "Aceptar", value: true, variant: "primary" },
-      ],
-      onResolve: resolve,
-    }
-    setToasts((prev) => [...prev, t])
-  }),
+      new Promise((resolve) => {
+        const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`
+
+        const okVariant = opts.okVariant || 'primary'
+        const cancelVariant = opts.cancelVariant || 'ghost'
+
+        const t = {
+          id,
+          type: 'confirm',
+          title: opts.title || 'Confirmación',
+          message,
+          duration: 0, // ✅ NO autoclose
+          actions: [
+            { label: opts.cancelText || 'Cancelar', value: false, variant: cancelVariant },
+            { label: opts.okText || 'Aceptar', value: true, variant: okVariant },
+          ],
+          // 👇 pinta franja/encabezado del confirm
+          confirmVariant: okVariant === 'danger' ? 'danger' : 'primary',
+          onResolve: resolve,
+        }
+
+        setToasts((prev) => [...prev, t])
+      }),
   }
 
-  function ToastViewport({ scope = "fixed" }) {
-  // scope: "fixed" (global) | "modal" (dentro del modal)
-  const scopeClass = scope === "modal" ? "toast-viewport--modal" : "toast-viewport--fixed";
-  return (
-    <div className={`toast-viewport top-right ${scopeClass}`} aria-live="polite" aria-relevant="additions">
-      {toasts.map((t) => (
-        <div key={t.id} className={`toast toast--${t.type}`} role={t.type === "error" ? "alert" : "status"}>
-          <div className="toast__bar" />
-          <div className="toast__head">
-            <div className="toast__title">{t.title}</div>
-            <button className="toast__close" onClick={() => closeToast(t.id)} aria-label="Cerrar">
-              ×
-            </button>
-          </div>
-          <div className="toast__msg">{t.message}</div>
-          {t.type === "confirm" && Array.isArray(t.actions) && (
-  <div className="toast__actions">
-    {t.actions.map((a, idx) => (
-      <button
-        key={idx}
-        className={`toast__btn ${a.variant === "primary" ? "toast__btn--primary" : "toast__btn--ghost"}`}
-        onClick={() => {
-          try { t.onResolve?.(a.value) } catch {}
-          closeToast(t.id)
-        }}
-      >
-        {a.label}
-      </button>
-    ))}
-  </div>
-)}
-        </div>
-      ))}
-    </div>
-  );
-}
+  function ToastViewport({ scope = 'fixed' }) {
+    // scope: "fixed" (global) | "modal" (dentro del modal)
+    const scopeClass = scope === 'modal' ? 'toast-viewport--modal' : 'toast-viewport--fixed'
+
+    function closeX(t) {
+      // si era confirmación y cierran con X, resolvemos como "false"
+      if (t.type === 'confirm' && typeof t.onResolve === 'function') {
+        try { t.onResolve(false) } catch {}
+      }
+      closeToast(t.id)
+    }
+
+    function action(t, value) {
+      if (typeof t.onResolve === 'function') {
+        try { t.onResolve(value) } catch {}
+      }
+      closeToast(t.id)
+    }
+
+    return (
+      <div className={`toast-viewport top-right ${scopeClass}`} aria-live="polite" aria-relevant="additions">
+        {toasts.map((t) => {
+          const confirmVariantClass =
+            t.type === 'confirm' && t.confirmVariant ? `toast--confirm-${t.confirmVariant}` : ''
+
+          return (
+            <div
+              key={t.id}
+              className={`toast toast--${t.type} ${confirmVariantClass}`}
+              role={t.type === 'error' ? 'alert' : 'status'}
+            >
+              <div className="toast__bar" />
+              <div className="toast__head">
+                <div className="toast__title">{t.title}</div>
+                <button className="toast__close" onClick={() => closeX(t)} aria-label="Cerrar">
+                  ×
+                </button>
+              </div>
+
+              <div className="toast__msg">{t.message}</div>
+
+              {t.type === 'confirm' && Array.isArray(t.actions) && (
+                <div className="toast__actions">
+                  {t.actions.map((a, idx) => (
+                    <button
+                      key={idx}
+                      className={`toast__btn toast__btn--${a.variant || 'ghost'}`}
+                      onClick={() => action(t, a.value)}
+                    >
+                      {a.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
 
   
 
@@ -1016,11 +1048,10 @@ if (tipo === "excel") {
       )
     }
     if (view === 'bitacora') {
-      return <Bitacora bitacoras={bitacoras} onNew={createNewBitacora} onOpen={openBitacoraDetail} onDownload={downloadBitacora} />
+      return <Bitacora bitacoras={bitacoras} toast={toast} onNew={createNewBitacora} onOpen={openBitacoraDetail} onDownload={downloadBitacora} />
     }
     if (view === 'perfil') {
-      if (auth?.rol !== 'jefe') return <div className="card">No tienes permisos para ver usuarios.</div>
-      return <PerfilUsuarios />
+      return <PerfilUsuarios auth={auth} toast={toast} />
     }
     if (view === 'papelera') {
       return <Papelera
@@ -1037,9 +1068,10 @@ if (tipo === "excel") {
         setPendientes={setPendientes}
         terminados={terminados}
         setTerminados={setTerminados}
+        toast={toast}
       />
     )
-  }, [view, auth, inventario, areas, categorias, bitacoras, pendientes, terminados])
+  }, [view, auth, inventario, areas, categorias, bitacoras, pendientes, terminados, toast])
 
   if (view === 'login' || !auth) {
     return (
