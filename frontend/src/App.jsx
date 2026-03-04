@@ -15,13 +15,18 @@ import Papelera from './views/Papelera.jsx'
 import { apiFetch } from "./services/api.js"
 import logoLeft from './assets/logo_left.png'
 import logoRight from './assets/logo_right.png'
+import ResetPasswordView from "./views/ResetPasswordView.jsx";
 
 function isoDate() {
   return new Date().toISOString().slice(0, 10)
 }
 
 export default function App() {
-  const [view, setView] = useState('login')
+  const [view, setView] = useState(() => {
+  const p = window.location.pathname || "/";
+  if (p.startsWith("/reset-password")) return "reset-password";
+  return "login";
+});
  
 
   const [auth, setAuth] = useState(() => {
@@ -51,7 +56,7 @@ export default function App() {
   // ✅ Perfil / usuarios (modal al clickear avatar)
   const [userCenterOpen, setUserCenterOpen] = useState(false)
   const [userCenterTab, setUserCenterTab] = useState('me')
-
+  
   // ✅ Notificaciones (solo Jefe)
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
@@ -1073,6 +1078,18 @@ if (tipo === "excel") {
     )
   }, [view, auth, inventario, areas, categorias, bitacoras, pendientes, terminados, toast])
 
+  if (view === "reset-password") {
+    return (
+      <ResetPasswordView
+        onGoLogin={() => {
+          // opcional: limpiar la URL
+          window.history.pushState({}, "", "/");
+          setView("login");
+        }}
+      />
+    );
+  }
+
   if (view === 'login' || !auth) {
     return (
       <Login
@@ -1088,7 +1105,7 @@ if (tipo === "excel") {
 
 
 
-  // ✅ Bitácora (vista completa dentro del modal, como en Hospital.zip)
+  //  Bitácora (vista completa dentro del modal, como en Hospital.zip)
   function BitacoraSheet({ bitacoraId }) {
       const b = bitacoras.find(x => x.id === bitacoraId)
       if (!b) return <div>No se encontró la bitácora.</div>
@@ -1220,11 +1237,11 @@ if (tipo === "excel") {
                         />
                       </td>
 
-                      {/* ✅ Fecha: misma que fecha de creación de bitácora */}
+                      {/*  Fecha: misma que fecha de creación de bitácora */}
                       <td>{fmt(b.fecha)}</td>
 
                       <td>
-                        {/* ✅ Observaciones editable */}
+                        {/*  Observaciones editable */}
                         <input
                           className="bitacora-obs"
                           value={row.observaciones || ''}

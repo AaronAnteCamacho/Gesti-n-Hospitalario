@@ -14,14 +14,21 @@ function getToken() {
   return null;
 }
 
+/**
+ * apiFetch(path, options)
+ * - Por defecto manda Authorization si hay token
+ * - Si pasas options.skipAuth = true -> NO manda Authorization (útil para /auth/recover, /auth/reset)
+ */
 export async function apiFetch(path, options = {}) {
-  const token = getToken();
+  const { skipAuth, headers, ...rest } = options;
+
+  const token = skipAuth ? null : getToken();
 
   const res = await fetch(`${API_URL}${path}`, {
-    ...options,
+    ...rest,
     headers: {
       "Content-Type": "application/json",
-      ...(options.headers || {}),
+      ...(headers || {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
@@ -37,4 +44,24 @@ export async function apiFetch(path, options = {}) {
 
   if (!res.ok) throw new Error(data?.message || "Error API");
   return data;
+}
+
+/** =========================
+ *  HELPERS: AUTH (PUBLICOS)
+ *  ========================= */
+
+export function authRecover(correo) {
+  return apiFetch("/api/auth/recover", {
+    method: "POST",
+    skipAuth: true,
+    body: JSON.stringify({ correo }),
+  });
+}
+
+export function authReset(token, password) {
+  return apiFetch("/api/auth/reset", {
+    method: "POST",
+    skipAuth: true,
+    body: JSON.stringify({ token, password }),
+  });
 }

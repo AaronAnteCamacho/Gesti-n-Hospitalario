@@ -30,12 +30,6 @@ export default function Bitacora({ bitacoras, onNew, onOpen, onDownload }) {
     <section className="card bitacora">
       <div className="bitacora__header">
         <h2 className="bitacora__title">Bitácoras</h2>
-
-        <div>
-          <button className="btn" onClick={onNew}>
-            Nueva bitácora
-          </button>
-        </div>
       </div>
 
       <div className="card bitacora__tableCard">

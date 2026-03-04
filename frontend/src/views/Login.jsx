@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from "react";
-import { apiFetch } from "../services/api.js";
+import { apiFetch, authRecover } from "../services/api.js";
 
 import imssLogo from "../assets/imss_icon_64.png";
 import PasswordToggleIconButton from "../components/PasswordToggleIconButton.jsx";
@@ -86,10 +86,7 @@ async function handleLogin(e) {
     setLoading(true);
 
     try {
-      const r = await apiFetch("/api/auth/recover", {
-        method: "POST",
-        body: JSON.stringify({ correo: correoRec }),
-      });
+      const r = await authRecover(correoRec);
 
       pushToast("success", r?.message || "Solicitud enviada.");
       setRecuperar(false);
@@ -269,10 +266,7 @@ async function handleLogin(e) {
                 </button>
               </div>
 
-              <div className="imss-hint">
-                Tip: si es la primera vez, confirma que tu usuario tenga un{" "}
-                <b>password_hash válido</b> en la BD.
-              </div>
+             
             </form>
           ) : (
             <form onSubmit={handleRecover} className="imss-form">
@@ -303,18 +297,10 @@ async function handleLogin(e) {
               >
                 Volver al login
               </button>
-
-              <div className="imss-hint">
-                Si aún no implementas envío real por correo, este endpoint puede
-                responder solo con un mensaje demo.
-              </div>
             </form>
           )}
 
-          <div className="imss-card-footer">
-            <span className="imss-dot" />
-            Conexión segura a sistema interno
-          </div>
+        
         </main>
       </div>
     </div>

@@ -45,5 +45,6 @@ app.use("/api/papelera", papeleraRoutes);
 app.use("/api/usuarios", usuariosRoutes);
 app.use("/api/notificaciones", notificacionesRoutes);
 
+
 export default app;
 

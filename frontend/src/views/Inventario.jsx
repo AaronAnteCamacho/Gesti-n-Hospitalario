@@ -56,12 +56,7 @@ export default function InventarioView({
   onDelete,
 }) {
   useEffect(() => {
-    // ✅ “marca” para confirmar que ESTE archivo es el que corre
-    console.log("[InventarioView.jsx ACTIVO ✅]", {
-      hasOnAdd: !!onAdd,
-      hasOnEdit: !!onEdit,
-      hasOnTrash: !!onTrash,
-    });
+    
 
     // ===== calcula altura del header y la guarda en CSS var =====
     const setHdr = () => {
@@ -465,7 +460,7 @@ export default function InventarioView({
             Agregar
           </button>
 
-          {/* ✅ SOLO abre el modal selector */}
+          {/* SOLO abre el modal selector */}
           <button className="btn" onClick={() => setOpenExport(true)}>
             <i className="fa-solid fa-download" style={{ marginRight: 8 }} />
             Descargar todo
