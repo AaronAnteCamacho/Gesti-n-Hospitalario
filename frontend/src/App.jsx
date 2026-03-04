@@ -11,7 +11,7 @@ import Formulario from './views/Formulario.jsx'
 import Login from './views/Login.jsx'
 import PerfilUsuarios from "./views/PerfilUsuarios.jsx"
 import Papelera from './views/Papelera.jsx'
-
+import "./styles/toast.css";
 import { apiFetch } from "./services/api.js"
 import logoLeft from './assets/logo_left.png'
 import logoRight from './assets/logo_right.png'
@@ -1078,18 +1078,20 @@ if (tipo === "excel") {
     )
   }, [view, auth, inventario, areas, categorias, bitacoras, pendientes, terminados, toast])
 
-  if (view === "reset-password") {
-    return (
+if (view === "reset-password") {
+  return (
+    <>
       <ResetPasswordView
+        toast={toast}
         onGoLogin={() => {
-          // opcional: limpiar la URL
           window.history.pushState({}, "", "/");
           setView("login");
         }}
       />
-    );
-  }
-
+      <ToastViewport scope="fixed" />
+    </>
+  );
+}
   if (view === 'login' || !auth) {
     return (
       <Login

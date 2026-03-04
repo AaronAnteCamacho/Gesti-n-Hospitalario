@@ -6,7 +6,8 @@ import './styles/Theme.css'
 import "./styles/Toast.css";
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+ <React.StrictMode>
     <App />
   </React.StrictMode>,
+ 
 )
