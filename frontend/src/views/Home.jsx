@@ -99,9 +99,11 @@ export default function Home({
                 <button className="btn" onClick={() => onReportFalla?.(found)}>
                   Reportar falla
                 </button>
-                <button className="nav-btn" onClick={onGoForm}>
-                  Ir a formularios
-                </button>
+                {typeof onGoForm === "function" && (
+                  <button className="nav-btn" onClick={onGoForm}>
+                    Ir a formularios
+                  </button>
+                )}
               </div>
             </div>
           </div>

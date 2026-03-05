@@ -245,6 +245,17 @@ export default function App() {
     return () => document.removeEventListener('click', onDocClick)
   }, [])
 
+  useEffect(() => {
+    if (!auth) return;
+
+    const isJefe = auth?.rol === "jefe";
+    if (!isJefe && view === "formulario") {
+      setView("home");
+      pushToast("error", "No tienes permisos para acceder a Orden de Servicio.");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth, view]);
+
   async function loadNotifications({ silentToasts = false } = {}) {
     if (!auth || auth.rol !== 'jefe') return
     try {
@@ -1030,7 +1041,7 @@ if (tipo === "excel") {
         <Home
           inventario={inventario}
           bitacoras={bitacoras}
-          onGoForm={() => setView('formulario')}
+          onGoForm={auth?.rol === "jefe" ? () => setView("formulario") : undefined}
           onReportFalla={(eq) => openReportFallaModal(eq)}
           onQuickCreate={quickCreateFromQuery}
         />

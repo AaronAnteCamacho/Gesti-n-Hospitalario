@@ -110,14 +110,6 @@ export default function PapeleraView({ auth, onBack, onRestored, toast }) {
     <section className="card">
       <div className="papeleraHeader">
         <h2 className="papeleraTitle">Papelera</h2>
-
-        <button className="nav-btn" onClick={onBack}>
-          Volver
-        </button>
-
-        <button className="btn" onClick={load} disabled={loading}>
-          Recargar
-        </button>
       </div>
 
       <div className="card papeleraCardInner">

@@ -85,7 +85,7 @@ export default function Header({
           <NavBtn id="home" label="Home" />
           <NavBtn id="inventario" label="Inventario" />
           <NavBtn id="bitacora" label="Bitácora" />
-          <NavBtn id="formulario" label="Orden de Servicio" />
+          {isJefe && <NavBtn id="formulario" label="Orden de Servicio" />}
         </nav>
 
         {/* Right */}
