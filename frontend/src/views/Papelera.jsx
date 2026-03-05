@@ -143,6 +143,9 @@ export default function PapeleraView({ auth, onBack, onRestored, toast }) {
               <th>Categoría</th>
               <th>Fecha registro</th>
               <th>Fecha borrado</th>
+              <button className="btn" onClick={() => restore(it)} disabled={loading}>
+                 Restaurar
+              </button>
               {isJefe && <th>Acciones</th>}
             </tr>
           </thead>
@@ -170,9 +173,7 @@ export default function PapeleraView({ auth, onBack, onRestored, toast }) {
                 {isJefe && (
                   <td>
                     <div className="papeleraActions">
-                      <button className="btn" onClick={() => restore(it)} disabled={loading}>
-                        Restaurar
-                      </button>
+                      
                       <button className="btn danger" onClick={() => removeForever(it)} disabled={loading}>
                         Eliminar
                       </button>
