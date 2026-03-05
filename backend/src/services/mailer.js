@@ -1,29 +1,14 @@
 import nodemailer from "nodemailer";
 
 export function createTransporter() {
-  const service = (process.env.SMTP_SERVICE || "").toLowerCase(); // gmail | ""
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-
-  if (!user || !pass) {
-    throw new Error("Faltan SMTP_USER/SMTP_PASS en .env");
-  }
-
-  // ✅ Modo Gmail (recomendado si usarás una cuenta Gmail/Google Workspace)
-  if (service === "gmail") {
-    return nodemailer.createTransport({
-      service: "gmail",
-      auth: { user, pass }, // pass = APP PASSWORD
-    });
-  }
-
-  // ✅ Modo SMTP genérico (por si luego usas Brevo/SendGrid/SMTP2GO/etc.)
   const host = process.env.SMTP_HOST;
   const port = Number(process.env.SMTP_PORT || 465);
   const secure = String(process.env.SMTP_SECURE || "true").toLowerCase() === "true";
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
 
-  if (!host) {
-    throw new Error("Faltan variables SMTP_* (SMTP_HOST/SMTP_PORT/SMTP_SECURE) o define SMTP_SERVICE=gmail");
+  if (!host || !user || !pass) {
+    throw new Error("Faltan variables SMTP_* en .env (SMTP_HOST/SMTP_USER/SMTP_PASS)");
   }
 
   return nodemailer.createTransport({
@@ -64,6 +49,9 @@ export async function sendResetEmail({ to, resetUrl }) {
       <p style="font-size:12px;color:#777">IMSS • Uso interno</p>
     </div>
   `;
+
+  // opcional: verifica conexión
+  // await transporter.verify();
 
   await transporter.sendMail({ from, to, subject, text, html });
 }
