@@ -176,6 +176,10 @@
   background: rgba(255, 255, 255, 0.28);
   border-bottom: 1px solid rgba(255, 255, 255, 0.22);
 }
+/* Solo centrar encabezado de Acciones */
+.formulario__tabsCard thead th:last-child {
+  text-align: center;
+}
 
 .formulario__tabsCard tbody td {
   color: rgba(6, 46, 34, 0.88);
@@ -341,4 +345,11 @@
 .formulario .muted,
 .formulario .small.muted {
   color: rgba(6, 46, 34, 0.65);
+}
+
+.formulario__tabsCard thead th:nth-child(3),
+.formulario__tabsCard tbody td:nth-child(3) {
+  min-width: 95px;
+  width: 95px;
+  white-space: normal;
 }

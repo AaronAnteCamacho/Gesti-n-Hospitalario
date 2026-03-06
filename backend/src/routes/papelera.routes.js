@@ -27,7 +27,9 @@ router.get(
             e.numero_serie,
             e.ubicacion_especifica,
             e.id_categoria,
+            c.nombre_categoria,
             e.id_area,
+            a.nombre_area,
             e.activo,
             e.fecha_registro,
 
@@ -38,7 +40,12 @@ router.get(
             u.nombre AS usuario_nombre,
             u.correo AS usuario_correo
           FROM dbo.equipos e
-          LEFT JOIN dbo.usuarios u ON u.id_usuario = e.id_usuario_papelera
+          LEFT JOIN dbo.usuarios u
+            ON u.id_usuario = e.id_usuario_papelera
+          LEFT JOIN dbo.areas_hospital a
+            ON a.id_area = e.id_area
+          LEFT JOIN dbo.categorias_equipo c
+            ON c.id_categoria = e.id_categoria
           WHERE e.en_papelera = 1
           ORDER BY e.fecha_papelera DESC, e.id_equipo DESC
         `
@@ -52,7 +59,9 @@ router.get(
             e.numero_serie,
             e.ubicacion_especifica,
             e.id_categoria,
+            c.nombre_categoria,
             e.id_area,
+            a.nombre_area,
             e.activo,
             e.fecha_registro,
 
@@ -63,8 +72,14 @@ router.get(
             u.nombre AS usuario_nombre,
             u.correo AS usuario_correo
           FROM dbo.equipos e
-          LEFT JOIN dbo.usuarios u ON u.id_usuario = e.id_usuario_papelera
-          WHERE e.en_papelera = 1 AND e.id_usuario_papelera = @id_usuario
+          LEFT JOIN dbo.usuarios u
+            ON u.id_usuario = e.id_usuario_papelera
+          LEFT JOIN dbo.areas_hospital a
+            ON a.id_area = e.id_area
+          LEFT JOIN dbo.categorias_equipo c
+            ON c.id_categoria = e.id_categoria
+          WHERE e.en_papelera = 1
+            AND e.id_usuario_papelera = @id_usuario
           ORDER BY e.fecha_papelera DESC, e.id_equipo DESC
         `;
 
@@ -136,18 +151,15 @@ router.delete(
       await tx.begin();
 
       try {
-        // ✅ Crea un request por transacción
         const reqTx = new sql.Request(tx);
-
-        // ✅ Declara el parámetro UNA sola vez
         reqTx.input("id", sql.Int, id);
 
         // 1) Verifica que exista y esté en papelera
-        const chk = await reqTx.query(
-          `SELECT TOP 1 id_equipo
-           FROM dbo.equipos
-           WHERE id_equipo = @id AND en_papelera = 1`
-        );
+        const chk = await reqTx.query(`
+          SELECT TOP 1 id_equipo
+          FROM dbo.equipos
+          WHERE id_equipo = @id AND en_papelera = 1
+        `);
 
         if (!chk.recordset?.length) {
           await tx.rollback();
@@ -160,10 +172,10 @@ router.delete(
         await reqTx.query(`DELETE FROM dbo.formularios_servicio WHERE id_equipo = @id`);
 
         // 3) Borra el equipo
-        const r = await reqTx.query(
-          `DELETE FROM dbo.equipos
-           WHERE id_equipo = @id AND en_papelera = 1`
-        );
+        const r = await reqTx.query(`
+          DELETE FROM dbo.equipos
+          WHERE id_equipo = @id AND en_papelera = 1
+        `);
 
         if (r.rowsAffected?.[0] === 0) {
           await tx.rollback();
@@ -173,13 +185,21 @@ router.delete(
         await tx.commit();
         return res.json({ ok: true });
       } catch (errTx) {
-        try { await tx.rollback(); } catch {}
+        try {
+          await tx.rollback();
+        } catch {}
         console.error(errTx);
-        return res.status(500).json({ ok: false, message: errTx?.message || "Error eliminando definitivamente" });
+        return res.status(500).json({
+          ok: false,
+          message: errTx?.message || "Error eliminando definitivamente",
+        });
       }
     } catch (e) {
       console.error(e);
-      return res.status(500).json({ ok: false, message: e?.message || "Error eliminando definitivamente" });
+      return res.status(500).json({
+        ok: false,
+        message: e?.message || "Error eliminando definitivamente",
+      });
     }
   }
 );
