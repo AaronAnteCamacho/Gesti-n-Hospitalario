@@ -193,18 +193,7 @@ export default function Header({
 
           {/* Acciones */}
           <div className="appHeader__group">
-            {!isJefe && (
-              <div
-                className="appHeader__icon appHeader__actionPlus"
-                title="Agregar"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onAddClick?.()
-                }}
-              >
-                <i className="fa-solid fa-plus"></i>
-              </div>
-            )}
+     
 
             <div
               className="appHeader__icon appHeader__actionTrash"
