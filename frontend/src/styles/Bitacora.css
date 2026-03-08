@@ -136,3 +136,346 @@
 .bitacora .small.muted {
   color: rgba(6, 46, 34, 0.65);
 }
+/* =========================
+   REPORTE DE FALLA RESPONSIVE
+   ========================= */
+
+.report-falla-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.report-falla-date {
+  margin-top: 4px;
+}
+
+.report-falla-desktop {
+  display: block;
+}
+
+.report-falla-mobile {
+  display: none;
+}
+
+.report-falla-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.report-card {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(6, 95, 70, 0.14);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+}
+
+.report-card__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.report-card__grid div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.report-card__grid span {
+  font-size: 12px;
+  color: rgba(6, 46, 34, 0.65);
+  font-weight: 700;
+}
+
+.report-card__grid strong {
+  color: rgba(6, 46, 34, 0.92);
+  word-break: break-word;
+}
+
+.report-section-title {
+  margin-bottom: 10px;
+  font-weight: 900;
+  color: rgba(6, 46, 34, 0.92);
+}
+
+.report-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.report-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(6, 95, 70, 0.18);
+  background: rgba(255, 255, 255, 0.96);
+  cursor: pointer;
+  font-weight: 800;
+  color: rgba(6, 46, 34, 0.88);
+  user-select: none;
+}
+
+.report-option.is-active {
+  border-color: rgba(6, 95, 70, 0.55);
+  background: rgba(16, 185, 129, 0.12);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.10);
+}
+
+.report-option input {
+  width: 18px !important;
+  height: 18px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.report-falla-textarea {
+  width: 100%;
+  min-height: 110px;
+  resize: vertical;
+}
+
+/* Logos mejor ajustados */
+.report-falla-head {
+  align-items: center;
+}
+
+.report-falla-head .bitacora-logos img {
+  max-width: 92px;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* ===== Tablet ===== */
+@media (max-width: 900px) {
+  .report-falla-head {
+    gap: 12px;
+  }
+
+  .report-falla-head .bitacora-title {
+    flex: 1;
+  }
+
+  .report-falla-head .bitacora-title .t1 {
+    font-size: 22px;
+    line-height: 1.12;
+  }
+
+  .report-falla-head .bitacora-title .t2,
+  .report-falla-head .bitacora-title .t3 {
+    font-size: 16px;
+  }
+}
+
+/* ===== Celular ===== */
+@media (max-width: 680px) {
+  .report-falla-desktop {
+    display: none !important;
+  }
+
+  .report-falla-mobile {
+    display: flex !important;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .report-falla-head {
+    display: grid;
+    grid-template-columns: 56px 1fr 56px;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .report-falla-head .bitacora-logos {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .report-falla-head .bitacora-logos img {
+    max-width: 52px;
+  }
+
+  .report-falla-head .bitacora-title {
+    text-align: center;
+  }
+
+  .report-falla-head .bitacora-title .t1 {
+    font-size: 15px;
+    line-height: 1.15;
+  }
+
+  .report-falla-head .bitacora-title .t2 {
+    font-size: 13px;
+    line-height: 1.15;
+  }
+
+  .report-falla-head .bitacora-title .t3 {
+    font-size: 12px;
+    line-height: 1.15;
+  }
+
+  .report-card {
+    padding: 12px;
+  }
+
+  .report-card__grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .report-options {
+    grid-template-columns: 1fr;
+  }
+
+  .report-option {
+    justify-content: flex-start;
+    min-height: 50px;
+  }
+
+  .report-falla-actions {
+    position: sticky;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.94);
+    padding-top: 8px;
+    border-top: 1px solid rgba(6, 95, 70, 0.12);
+  }
+
+  .report-falla-actions .nav-btn,
+  .report-falla-actions .btn {
+    flex: 1 1 100%;
+    min-height: 48px;
+  }
+}
+/* =========================
+   BITACORA ABIERTA RESPONSIVE
+   ========================= */
+
+.bitacora-open-desktop {
+  display: block;
+}
+
+.bitacora-open-mobile {
+  display: none;
+}
+
+.bitacora-mobile-card {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(6, 95, 70, 0.14);
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+  margin-top: 12px;
+}
+
+.bitacora-mobile-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.bitacora-mobile-grid div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bitacora-mobile-grid span {
+  font-size: 12px;
+  color: rgba(6, 46, 34, 0.65);
+  font-weight: 700;
+}
+
+.bitacora-mobile-grid strong {
+  color: rgba(6, 46, 34, 0.92);
+  word-break: break-word;
+}
+
+.bitacora-mobile-section {
+  margin-top: 14px;
+}
+
+.bitacora-mobile-title {
+  margin-bottom: 10px;
+  font-weight: 900;
+  color: rgba(6, 46, 34, 0.92);
+}
+
+.bitacora-mobile-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.bitacora-mobile-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(6, 95, 70, 0.18);
+  background: rgba(255, 255, 255, 0.96);
+  cursor: pointer;
+  font-weight: 800;
+  color: rgba(6, 46, 34, 0.88);
+  user-select: none;
+}
+
+.bitacora-mobile-option.is-active {
+  border-color: rgba(6, 95, 70, 0.55);
+  background: rgba(16, 185, 129, 0.12);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.10);
+}
+
+.bitacora-mobile-option input {
+  width: 18px !important;
+  height: 18px;
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.bitacora-mobile-textarea {
+  width: 100%;
+  min-height: 110px;
+  resize: vertical;
+  border-radius: 12px;
+}
+
+/* ===== celular ===== */
+@media (max-width: 680px) {
+  .bitacora-open-desktop {
+    display: none !important;
+  }
+
+  .bitacora-open-mobile {
+    display: flex !important;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .bitacora-mobile-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .bitacora-mobile-options {
+    grid-template-columns: 1fr;
+  }
+
+  .bitacora-mobile-option {
+    justify-content: flex-start;
+    min-height: 50px;
+  }
+}

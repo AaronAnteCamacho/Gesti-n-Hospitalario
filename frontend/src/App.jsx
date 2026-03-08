@@ -597,155 +597,300 @@ export default function App() {
     })
   }
 
-  function ReportFallaSheet({ equipo, onCancel, onSave }) {
-    const [fallo, setFallo] = useState({
-      funcionamiento_correcto: false,
-      funcionamiento_incorrecto: false,
-      sensores_correcto: false,
-      sensores_incorrecto: false,
-      requiere_reparacion_si: false,
-      requiere_reparacion_no: false,
-      observaciones: "",
-    })
+function ReportFallaSheet({ equipo, onCancel, onSave }) {
+  const [fallo, setFallo] = useState({
+    funcionamiento_correcto: false,
+    funcionamiento_incorrecto: false,
+    sensores_correcto: false,
+    sensores_incorrecto: false,
+    requiere_reparacion_si: false,
+    requiere_reparacion_no: false,
+    observaciones: "",
+  });
 
-    const fecha = isoDate()
+  const fecha = isoDate();
+  const fmt = (v) => String(v ?? "").trim() || "—";
 
-    const fmt = (v) => String(v ?? "").trim() || "—"
-
-    function setRadio(group, value) {
-      if (group === "func") {
-        setFallo((p) => ({
-          ...p,
-          funcionamiento_correcto: value === "correcto",
-          funcionamiento_incorrecto: value === "incorrecto",
-        }))
-      }
-      if (group === "sens") {
-        setFallo((p) => ({
-          ...p,
-          sensores_correcto: value === "correcto",
-          sensores_incorrecto: value === "incorrecto",
-        }))
-      }
-      if (group === "rep") {
-        setFallo((p) => ({
-          ...p,
-          requiere_reparacion_si: value === "si",
-          requiere_reparacion_no: value === "no",
-        }))
-      }
+  function setRadio(group, value) {
+    if (group === "func") {
+      setFallo((p) => ({
+        ...p,
+        funcionamiento_correcto: value === "correcto",
+        funcionamiento_incorrecto: value === "incorrecto",
+      }));
     }
 
-    return (
-      <div className="bitacora-sheet">
-        <div className="bitacora-head">
-          <div className="bitacora-logos">
-            <img src={logoLeft} alt="Logo" />
-          </div>
+    if (group === "sens") {
+      setFallo((p) => ({
+        ...p,
+        sensores_correcto: value === "correcto",
+        sensores_incorrecto: value === "incorrecto",
+      }));
+    }
 
-          <div className="bitacora-title">
-            <div className="t1">HOSPITAL DE ESPECIALIDADES "DR. ANTONIO GONZALEZ GUEVARA"</div>
-            <div className="t2">AREA DE MANTENIMIENTO</div>
-            <div className="t3">REPORTE DE FALLA</div>
-          </div>
+    if (group === "rep") {
+      setFallo((p) => ({
+        ...p,
+        requiere_reparacion_si: value === "si",
+        requiere_reparacion_no: value === "no",
+      }));
+    }
+  }
 
-          <div className="bitacora-logos right">
-            <img src={logoRight} alt="Logo" />
-          </div>
+  function handleSave() {
+    if (!fallo.funcionamiento_correcto && !fallo.funcionamiento_incorrecto) {
+      return pushToast("error", "Selecciona el funcionamiento");
+    }
+    if (!fallo.sensores_correcto && !fallo.sensores_incorrecto) {
+      return pushToast("error", "Selecciona sensores");
+    }
+    if (!fallo.requiere_reparacion_si && !fallo.requiere_reparacion_no) {
+      return pushToast("error", "Indica si requiere reparación");
+    }
+    onSave(fallo);
+  }
+
+  return (
+    <div className="bitacora-sheet report-falla-sheet">
+      <div className="bitacora-head report-falla-head">
+        <div className="bitacora-logos">
+          <img src={logoLeft} alt="Logo izquierdo" />
         </div>
 
-        <div className="small muted" style={{ marginTop: 8 }}>
-          Fecha: <strong>{fecha}</strong>
+        <div className="bitacora-title">
+          <div className="t1">HOSPITAL DE ESPECIALIDADES "DR. ANTONIO GONZALEZ GUEVARA"</div>
+          <div className="t2">AREA DE MANTENIMIENTO</div>
+          <div className="t3">REPORTE DE FALLA</div>
         </div>
 
-        <div className="bitacora-table-wrap">
-          <table className="bitacora-table">
-            <thead>
-              <tr>
-                <th rowSpan={2}>No. de inventario</th>
-                <th rowSpan={2}>Equipo médico</th>
-                <th rowSpan={2}>Marca</th>
-                <th rowSpan={2}>Modelo</th>
-                <th rowSpan={2}>Número de serie</th>
-                <th rowSpan={2}>Ubicación específica</th>
-                <th colSpan={2} style={{ textAlign: "center" }}>Funcionamiento</th>
-                <th colSpan={2} style={{ textAlign: "center" }}>Sensores</th>
-                <th colSpan={2} style={{ textAlign: "center" }}>Requiere reparación</th>
-                <th rowSpan={2}>Fecha</th>
-                <th rowSpan={2}>Observaciones</th>
-              </tr>
-              <tr>
-                <th className="center">Correcto</th>
-                <th className="center">Incorrecto</th>
-                <th className="center">Correcto</th>
-                <th className="center">Incorrecto</th>
-                <th className="center">Sí</th>
-                <th className="center">No</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              <tr>
-                <td>{fmt(equipo?.numero_inventario)}</td>
-                <td>{fmt(equipo?.nombre_equipo)}</td>
-                <td>{fmt(equipo?.marca)}</td>
-                <td>{fmt(equipo?.modelo)}</td>
-                <td>{fmt(equipo?.numero_serie)}</td>
-                <td>{fmt(equipo?.ubicacion_especifica)}</td>
-
-                <td className="center">
-                  <input type="radio" name="rf-func" checked={!!fallo.funcionamiento_correcto} onChange={() => setRadio("func", "correcto")} />
-                </td>
-                <td className="center">
-                  <input type="radio" name="rf-func" checked={!!fallo.funcionamiento_incorrecto} onChange={() => setRadio("func", "incorrecto")} />
-                </td>
-
-                <td className="center">
-                  <input type="radio" name="rf-sens" checked={!!fallo.sensores_correcto} onChange={() => setRadio("sens", "correcto")} />
-                </td>
-                <td className="center">
-                  <input type="radio" name="rf-sens" checked={!!fallo.sensores_incorrecto} onChange={() => setRadio("sens", "incorrecto")} />
-                </td>
-
-                <td className="center">
-                  <input type="radio" name="rf-rep" checked={!!fallo.requiere_reparacion_si} onChange={() => setRadio("rep", "si")} />
-                </td>
-                <td className="center">
-                  <input type="radio" name="rf-rep" checked={!!fallo.requiere_reparacion_no} onChange={() => setRadio("rep", "no")} />
-                </td>
-
-                <td>{fecha}</td>
-
-                <td>
-                  <input
-                    className="bitacora-obs"
-                    value={fallo.observaciones}
-                    onChange={(e) => setFallo((p) => ({ ...p, observaciones: e.target.value }))}
-                    placeholder="Escribe observaciones..."
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div style={{ marginTop: 12, display: "flex", gap: 8, justifyContent: "flex-end" }}>
-          <button className="nav-btn" onClick={onCancel}>Cancelar</button>
-          <button
-            className="btn"
-            onClick={() => {
-              if (!fallo.funcionamiento_correcto && !fallo.funcionamiento_incorrecto) return pushToast("error", "Selecciona el funcionamiento")
-              if (!fallo.sensores_correcto && !fallo.sensores_incorrecto) return pushToast("error", "Selecciona sensores")
-              if (!fallo.requiere_reparacion_si && !fallo.requiere_reparacion_no) return pushToast("error", "Indica si requiere reparación")
-              onSave(fallo)
-            }}
-          >
-            Guardar y enviar
-          </button>
+        <div className="bitacora-logos right">
+          <img src={logoRight} alt="Logo derecho" />
         </div>
       </div>
-    )
-  }
+
+      <div className="small muted report-falla-date">
+        Fecha: <strong>{fecha}</strong>
+      </div>
+
+      {/* ===== DESKTOP / TABLE ===== */}
+      <div className="bitacora-table-wrap report-falla-desktop">
+        <table className="bitacora-table">
+          <thead>
+            <tr>
+              <th rowSpan={2}>No. de inventario</th>
+              <th rowSpan={2}>Equipo médico</th>
+              <th rowSpan={2}>Marca</th>
+              <th rowSpan={2}>Modelo</th>
+              <th rowSpan={2}>Número de serie</th>
+              <th rowSpan={2}>Ubicación específica</th>
+              <th colSpan={2} style={{ textAlign: "center" }}>Funcionamiento</th>
+              <th colSpan={2} style={{ textAlign: "center" }}>Sensores</th>
+              <th colSpan={2} style={{ textAlign: "center" }}>Requiere reparación</th>
+              <th rowSpan={2}>Fecha</th>
+              <th rowSpan={2}>Observaciones</th>
+            </tr>
+            <tr>
+              <th className="center">Correcto</th>
+              <th className="center">Incorrecto</th>
+              <th className="center">Correcto</th>
+              <th className="center">Incorrecto</th>
+              <th className="center">Sí</th>
+              <th className="center">No</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <td>{fmt(equipo?.numero_inventario)}</td>
+              <td>{fmt(equipo?.nombre_equipo)}</td>
+              <td>{fmt(equipo?.marca)}</td>
+              <td>{fmt(equipo?.modelo)}</td>
+              <td>{fmt(equipo?.numero_serie)}</td>
+              <td>{fmt(equipo?.ubicacion_especifica)}</td>
+
+              <td className="center">
+                <input
+                  type="radio"
+                  name="rf-func"
+                  checked={!!fallo.funcionamiento_correcto}
+                  onChange={() => setRadio("func", "correcto")}
+                />
+              </td>
+              <td className="center">
+                <input
+                  type="radio"
+                  name="rf-func"
+                  checked={!!fallo.funcionamiento_incorrecto}
+                  onChange={() => setRadio("func", "incorrecto")}
+                />
+              </td>
+
+              <td className="center">
+                <input
+                  type="radio"
+                  name="rf-sens"
+                  checked={!!fallo.sensores_correcto}
+                  onChange={() => setRadio("sens", "correcto")}
+                />
+              </td>
+              <td className="center">
+                <input
+                  type="radio"
+                  name="rf-sens"
+                  checked={!!fallo.sensores_incorrecto}
+                  onChange={() => setRadio("sens", "incorrecto")}
+                />
+              </td>
+
+              <td className="center">
+                <input
+                  type="radio"
+                  name="rf-rep"
+                  checked={!!fallo.requiere_reparacion_si}
+                  onChange={() => setRadio("rep", "si")}
+                />
+              </td>
+              <td className="center">
+                <input
+                  type="radio"
+                  name="rf-rep"
+                  checked={!!fallo.requiere_reparacion_no}
+                  onChange={() => setRadio("rep", "no")}
+                />
+              </td>
+
+              <td>{fecha}</td>
+
+              <td>
+                <input
+                  className="bitacora-obs"
+                  value={fallo.observaciones}
+                  onChange={(e) =>
+                    setFallo((p) => ({ ...p, observaciones: e.target.value }))
+                  }
+                  placeholder="Escribe observaciones..."
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* ===== MOBILE / STACK ===== */}
+      <div className="report-falla-mobile">
+        <div className="report-card">
+          <div className="report-card__grid">
+            <div><span>No. inventario</span><strong>{fmt(equipo?.numero_inventario)}</strong></div>
+            <div><span>Equipo</span><strong>{fmt(equipo?.nombre_equipo)}</strong></div>
+            <div><span>Marca</span><strong>{fmt(equipo?.marca)}</strong></div>
+            <div><span>Modelo</span><strong>{fmt(equipo?.modelo)}</strong></div>
+            <div><span>Número de serie</span><strong>{fmt(equipo?.numero_serie)}</strong></div>
+            <div><span>Ubicación específica</span><strong>{fmt(equipo?.ubicacion_especifica)}</strong></div>
+            <div><span>Fecha</span><strong>{fecha}</strong></div>
+          </div>
+        </div>
+
+        <div className="report-card">
+          <div className="report-section-title">Funcionamiento</div>
+          <div className="report-options">
+            <label className={`report-option ${fallo.funcionamiento_correcto ? "is-active" : ""}`}>
+              <input
+                type="radio"
+                name="rf-func-mobile"
+                checked={!!fallo.funcionamiento_correcto}
+                onChange={() => setRadio("func", "correcto")}
+              />
+              <span>Correcto</span>
+            </label>
+
+            <label className={`report-option ${fallo.funcionamiento_incorrecto ? "is-active" : ""}`}>
+              <input
+                type="radio"
+                name="rf-func-mobile"
+                checked={!!fallo.funcionamiento_incorrecto}
+                onChange={() => setRadio("func", "incorrecto")}
+              />
+              <span>Incorrecto</span>
+            </label>
+          </div>
+        </div>
+
+        <div className="report-card">
+          <div className="report-section-title">Sensores</div>
+          <div className="report-options">
+            <label className={`report-option ${fallo.sensores_correcto ? "is-active" : ""}`}>
+              <input
+                type="radio"
+                name="rf-sens-mobile"
+                checked={!!fallo.sensores_correcto}
+                onChange={() => setRadio("sens", "correcto")}
+              />
+              <span>Correcto</span>
+            </label>
+
+            <label className={`report-option ${fallo.sensores_incorrecto ? "is-active" : ""}`}>
+              <input
+                type="radio"
+                name="rf-sens-mobile"
+                checked={!!fallo.sensores_incorrecto}
+                onChange={() => setRadio("sens", "incorrecto")}
+              />
+              <span>Incorrecto</span>
+            </label>
+          </div>
+        </div>
+
+        <div className="report-card">
+          <div className="report-section-title">¿Requiere reparación?</div>
+          <div className="report-options">
+            <label className={`report-option ${fallo.requiere_reparacion_si ? "is-active" : ""}`}>
+              <input
+                type="radio"
+                name="rf-rep-mobile"
+                checked={!!fallo.requiere_reparacion_si}
+                onChange={() => setRadio("rep", "si")}
+              />
+              <span>Sí</span>
+            </label>
+
+            <label className={`report-option ${fallo.requiere_reparacion_no ? "is-active" : ""}`}>
+              <input
+                type="radio"
+                name="rf-rep-mobile"
+                checked={!!fallo.requiere_reparacion_no}
+                onChange={() => setRadio("rep", "no")}
+              />
+              <span>No</span>
+            </label>
+          </div>
+        </div>
+
+        <div className="report-card">
+          <div className="report-section-title">Observaciones</div>
+          <textarea
+            className="report-falla-textarea"
+            value={fallo.observaciones}
+            onChange={(e) =>
+              setFallo((p) => ({ ...p, observaciones: e.target.value }))
+            }
+            placeholder="Escribe observaciones..."
+            rows={4}
+          />
+        </div>
+      </div>
+
+      <div className="report-falla-actions">
+        <button className="nav-btn" onClick={onCancel}>
+          Cancelar
+        </button>
+
+        <button className="btn" onClick={handleSave}>
+          Guardar y enviar
+        </button>
+      </div>
+    </div>
+  );
+}
 
   function openReportFallaModal(equipo) {
     const eq = equipo || {}
@@ -1159,115 +1304,222 @@ if (view === "reset-password") {
             Fecha: <strong>{fmt(b.fecha)}</strong> · Nº de artículos: <strong>{rows.length}</strong>
           </div>
 
-          <div className="bitacora-table-wrap">
-            <table className="bitacora-table">
-              <thead>
-                <tr>
-                  <th rowSpan={2}>No. de inventario</th>
-                  <th rowSpan={2}>Equipo médico</th>
-                  <th rowSpan={2}>Marca</th>
-                  <th rowSpan={2}>Modelo</th>
-                  <th rowSpan={2}>Número de serie</th>
-                  <th rowSpan={2}>Ubicación específica</th>
-                  <th colSpan={2} style={{ textAlign: 'center' }}>Funcionamiento</th>
-                  <th colSpan={2} style={{ textAlign: 'center' }}>Sensores</th>
-                  <th colSpan={2} style={{ textAlign: 'center' }}>Requiere reparación</th>
-                  <th rowSpan={2}>Fecha</th>
-                  <th rowSpan={2}>Observaciones</th>
-                </tr>
-                <tr>
-                  <th className="center">Correcto</th>
-                  <th className="center">Incorrecto</th>
-                  <th className="center">Correcto</th>
-                  <th className="center">Incorrecto</th>
-                  <th className="center">Sí</th>
-                  <th className="center">No</th>
-                </tr>
-              </thead>
+          {/* ===== DESKTOP ===== */}
+<div className="bitacora-table-wrap bitacora-open-desktop">
+  <table className="bitacora-table">
+    <thead>
+      <tr>
+        <th rowSpan={2}>No. de inventario</th>
+        <th rowSpan={2}>Equipo médico</th>
+        <th rowSpan={2}>Marca</th>
+        <th rowSpan={2}>Modelo</th>
+        <th rowSpan={2}>Número de serie</th>
+        <th rowSpan={2}>Ubicación específica</th>
+        <th colSpan={2} style={{ textAlign: 'center' }}>Funcionamiento</th>
+        <th colSpan={2} style={{ textAlign: 'center' }}>Sensores</th>
+        <th colSpan={2} style={{ textAlign: 'center' }}>Requiere reparación</th>
+        <th rowSpan={2}>Fecha</th>
+        <th rowSpan={2}>Observaciones</th>
+      </tr>
+      <tr>
+        <th className="center">Correcto</th>
+        <th className="center">Incorrecto</th>
+        <th className="center">Correcto</th>
+        <th className="center">Incorrecto</th>
+        <th className="center">Sí</th>
+        <th className="center">No</th>
+      </tr>
+    </thead>
 
-              <tbody>
-                {rows.map((cur, idx) => {
-                  const row = cur || {}
-                  const name = (suffix) => `${b.id}-${idx}-${suffix}`
+    <tbody>
+      {rows.map((cur, idx) => {
+        const row = cur || {}
+        const name = (suffix) => `${b.id}-${idx}-${suffix}`
 
-                  return (
-                    <tr key={idx}>
-                      <td>{fmt(row.numero_inventario || row.inventario || row.inv)}</td>
-                      <td>{fmt(row.equipo || row.nombre_equipo || row.nombre)}</td>
-                      <td>{fmt(row.marca)}</td>
-                      <td>{fmt(row.modelo)}</td>
-                      <td>{fmt(row.numero_serie || row.serie)}</td>
-                      <td>{fmt(row.ubicacion_especifica || row.ubicacion)}</td>
+        return (
+          <tr key={idx}>
+            <td>{fmt(row.numero_inventario || row.inventario || row.inv)}</td>
+            <td>{fmt(row.equipo || row.nombre_equipo || row.nombre)}</td>
+            <td>{fmt(row.marca)}</td>
+            <td>{fmt(row.modelo)}</td>
+            <td>{fmt(row.numero_serie || row.serie)}</td>
+            <td>{fmt(row.ubicacion_especifica || row.ubicacion)}</td>
 
-                      <td className="center">
-                        <input
-                          type="radio"
-                          name={name('func')}
-                          checked={!!row.funcionamiento_correcto}
-                          onChange={() => updateRow(idx, { funcionamiento_correcto: true, funcionamiento_incorrecto: false })}
-                        />
-                      </td>
-                      <td className="center">
-                        <input
-                          type="radio"
-                          name={name('func')}
-                          checked={!!row.funcionamiento_incorrecto}
-                          onChange={() => updateRow(idx, { funcionamiento_correcto: false, funcionamiento_incorrecto: true })}
-                        />
-                      </td>
+            <td className="center">
+              <input
+                type="radio"
+                name={name('func')}
+                checked={!!row.funcionamiento_correcto}
+                onChange={() => updateRow(idx, { funcionamiento_correcto: true, funcionamiento_incorrecto: false })}
+              />
+            </td>
+            <td className="center">
+              <input
+                type="radio"
+                name={name('func')}
+                checked={!!row.funcionamiento_incorrecto}
+                onChange={() => updateRow(idx, { funcionamiento_correcto: false, funcionamiento_incorrecto: true })}
+              />
+            </td>
 
-                      <td className="center">
-                        <input
-                          type="radio"
-                          name={name('sens')}
-                          checked={!!row.sensores_correcto}
-                          onChange={() => updateRow(idx, { sensores_correcto: true, sensores_incorrecto: false })}
-                        />
-                      </td>
-                      <td className="center">
-                        <input
-                          type="radio"
-                          name={name('sens')}
-                          checked={!!row.sensores_incorrecto}
-                          onChange={() => updateRow(idx, { sensores_correcto: false, sensores_incorrecto: true })}
-                        />
-                      </td>
+            <td className="center">
+              <input
+                type="radio"
+                name={name('sens')}
+                checked={!!row.sensores_correcto}
+                onChange={() => updateRow(idx, { sensores_correcto: true, sensores_incorrecto: false })}
+              />
+            </td>
+            <td className="center">
+              <input
+                type="radio"
+                name={name('sens')}
+                checked={!!row.sensores_incorrecto}
+                onChange={() => updateRow(idx, { sensores_correcto: false, sensores_incorrecto: true })}
+              />
+            </td>
 
-                      <td className="center">
-                        <input
-                          type="radio"
-                          name={name('rep')}
-                          checked={!!row.requiere_reparacion_si}
-                          onChange={() => updateRow(idx, { requiere_reparacion_si: true, requiere_reparacion_no: false })}
-                        />
-                      </td>
-                      <td className="center">
-                        <input
-                          type="radio"
-                          name={name('rep')}
-                          checked={!!row.requiere_reparacion_no}
-                          onChange={() => updateRow(idx, { requiere_reparacion_si: false, requiere_reparacion_no: true })}
-                        />
-                      </td>
+            <td className="center">
+              <input
+                type="radio"
+                name={name('rep')}
+                checked={!!row.requiere_reparacion_si}
+                onChange={() => updateRow(idx, { requiere_reparacion_si: true, requiere_reparacion_no: false })}
+              />
+            </td>
+            <td className="center">
+              <input
+                type="radio"
+                name={name('rep')}
+                checked={!!row.requiere_reparacion_no}
+                onChange={() => updateRow(idx, { requiere_reparacion_si: false, requiere_reparacion_no: true })}
+              />
+            </td>
 
-                      {/*  Fecha: misma que fecha de creación de bitácora */}
-                      <td>{fmt(b.fecha)}</td>
+            <td>{fmt(b.fecha)}</td>
 
-                      <td>
-                        {/*  Observaciones editable */}
-                        <input
-                          className="bitacora-obs"
-                          value={row.observaciones || ''}
-                          onChange={(e) => updateRow(idx, { observaciones: e.target.value })}
-                          placeholder="Escribe observaciones..."
-                        />
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+            <td>
+              <input
+                className="bitacora-obs"
+                value={row.observaciones || ''}
+                onChange={(e) => updateRow(idx, { observaciones: e.target.value })}
+                placeholder="Escribe observaciones..."
+              />
+            </td>
+          </tr>
+        )
+      })}
+    </tbody>
+  </table>
+</div>
+
+{/* ===== MOBILE ===== */}
+<div className="bitacora-open-mobile">
+  {rows.map((cur, idx) => {
+    const row = cur || {}
+    const name = (suffix) => `${b.id}-${idx}-${suffix}`
+
+    return (
+      <div className="bitacora-mobile-card" key={idx}>
+        <div className="bitacora-mobile-grid">
+          <div><span>No. inventario</span><strong>{fmt(row.numero_inventario || row.inventario || row.inv)}</strong></div>
+          <div><span>Equipo médico</span><strong>{fmt(row.equipo || row.nombre_equipo || row.nombre)}</strong></div>
+          <div><span>Marca</span><strong>{fmt(row.marca)}</strong></div>
+          <div><span>Modelo</span><strong>{fmt(row.modelo)}</strong></div>
+          <div><span>Número de serie</span><strong>{fmt(row.numero_serie || row.serie)}</strong></div>
+          <div><span>Ubicación específica</span><strong>{fmt(row.ubicacion_especifica || row.ubicacion)}</strong></div>
+          <div><span>Fecha</span><strong>{fmt(b.fecha)}</strong></div>
+        </div>
+
+        <div className="bitacora-mobile-section">
+          <div className="bitacora-mobile-title">Funcionamiento</div>
+          <div className="bitacora-mobile-options">
+            <label className={`bitacora-mobile-option ${row.funcionamiento_correcto ? 'is-active' : ''}`}>
+              <input
+                type="radio"
+                name={name('func-mobile')}
+                checked={!!row.funcionamiento_correcto}
+                onChange={() => updateRow(idx, { funcionamiento_correcto: true, funcionamiento_incorrecto: false })}
+              />
+              <span>Correcto</span>
+            </label>
+
+            <label className={`bitacora-mobile-option ${row.funcionamiento_incorrecto ? 'is-active' : ''}`}>
+              <input
+                type="radio"
+                name={name('func-mobile')}
+                checked={!!row.funcionamiento_incorrecto}
+                onChange={() => updateRow(idx, { funcionamiento_correcto: false, funcionamiento_incorrecto: true })}
+              />
+              <span>Incorrecto</span>
+            </label>
           </div>
+        </div>
+
+        <div className="bitacora-mobile-section">
+          <div className="bitacora-mobile-title">Sensores</div>
+          <div className="bitacora-mobile-options">
+            <label className={`bitacora-mobile-option ${row.sensores_correcto ? 'is-active' : ''}`}>
+              <input
+                type="radio"
+                name={name('sens-mobile')}
+                checked={!!row.sensores_correcto}
+                onChange={() => updateRow(idx, { sensores_correcto: true, sensores_incorrecto: false })}
+              />
+              <span>Correcto</span>
+            </label>
+
+            <label className={`bitacora-mobile-option ${row.sensores_incorrecto ? 'is-active' : ''}`}>
+              <input
+                type="radio"
+                name={name('sens-mobile')}
+                checked={!!row.sensores_incorrecto}
+                onChange={() => updateRow(idx, { sensores_correcto: false, sensores_incorrecto: true })}
+              />
+              <span>Incorrecto</span>
+            </label>
+          </div>
+        </div>
+
+        <div className="bitacora-mobile-section">
+          <div className="bitacora-mobile-title">¿Requiere reparación?</div>
+          <div className="bitacora-mobile-options">
+            <label className={`bitacora-mobile-option ${row.requiere_reparacion_si ? 'is-active' : ''}`}>
+              <input
+                type="radio"
+                name={name('rep-mobile')}
+                checked={!!row.requiere_reparacion_si}
+                onChange={() => updateRow(idx, { requiere_reparacion_si: true, requiere_reparacion_no: false })}
+              />
+              <span>Sí</span>
+            </label>
+
+            <label className={`bitacora-mobile-option ${row.requiere_reparacion_no ? 'is-active' : ''}`}>
+              <input
+                type="radio"
+                name={name('rep-mobile')}
+                checked={!!row.requiere_reparacion_no}
+                onChange={() => updateRow(idx, { requiere_reparacion_si: false, requiere_reparacion_no: true })}
+              />
+              <span>No</span>
+            </label>
+          </div>
+        </div>
+
+        <div className="bitacora-mobile-section">
+          <div className="bitacora-mobile-title">Observaciones</div>
+          <textarea
+            className="bitacora-mobile-textarea"
+            value={row.observaciones || ''}
+            onChange={(e) => updateRow(idx, { observaciones: e.target.value })}
+            placeholder="Escribe observaciones..."
+            rows={4}
+          />
+        </div>
+      </div>
+    )
+  })}
+</div>
 
           <div style={{ marginTop: 12, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
             <button className="btn" onClick={() => window.print()}>Imprimir</button>
