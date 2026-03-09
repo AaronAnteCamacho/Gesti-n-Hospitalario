@@ -215,26 +215,66 @@ export default function App() {
     setModal({ open: false, title: '', kind: null, bitacoraId: null, body: null })
   }
 
-  async function loadInventario() {
-    const r = await apiFetch("/api/equipos")
-    setInventario(r.data || [])
-  }
+async function loadInventario() {
+  try {
+    const r = await apiFetch("/api/equipos");
+    setInventario(r.data || []);
+  } catch (e) {
+    const msg = String(e?.message || "").toLowerCase();
 
-  async function loadCatalogos() {
+    if (
+      msg.includes("token inválido") ||
+      msg.includes("token invalido") ||
+      msg.includes("unauthorized") ||
+      msg.includes("401")
+    ) {
+      localStorage.removeItem("auth");
+      localStorage.removeItem("token");
+      setAuth(null);
+      setView("login");
+      return;
+    }
+
+    throw e;
+  }
+}
+
+async function loadCatalogos() {
+  try {
     const [a, c] = await Promise.all([
       apiFetch("/api/areas"),
       apiFetch("/api/categorias"),
-    ])
-    setAreas(a.data || [])
-    setCategorias(c.data || [])
-  }
+    ]);
 
-  useEffect(() => {
-    if (!auth) return
-    loadInventario().catch((e) => console.error("ERROR loadInventario:", e))
-    loadCatalogos().catch((e) => console.error("ERROR loadCatalogos:", e))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auth])
+    setAreas(a.data || []);
+    setCategorias(c.data || []);
+  } catch (e) {
+    const msg = String(e?.message || "").toLowerCase();
+
+    if (
+      msg.includes("token inválido") ||
+      msg.includes("token invalido") ||
+      msg.includes("unauthorized") ||
+      msg.includes("401")
+    ) {
+      localStorage.removeItem("auth");
+      localStorage.removeItem("token");
+      setAuth(null);
+      setView("login");
+      return;
+    }
+
+    throw e;
+  }
+}
+
+ useEffect(() => {
+  if (!auth) return;
+  if (view === "login" || view === "reset-password") return;
+
+  loadInventario().catch((e) => console.error("ERROR loadInventario:", e));
+  loadCatalogos().catch((e) => console.error("ERROR loadCatalogos:", e));
+}, [auth, view]);
 
   // ✅ Cerrar panel de notificaciones al clickear fuera
   useEffect(() => {
@@ -283,13 +323,15 @@ export default function App() {
   }
 
   // ✅ polling (solo jefe)
-  useEffect(() => {
-    if (!auth || auth.rol !== 'jefe') return
-    loadNotifications({ silentToasts: true })
-    const t = window.setInterval(() => loadNotifications({ silentToasts: false }), 8000)
-    return () => window.clearInterval(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auth])
+useEffect(() => {
+  if (!auth || auth.rol !== "jefe") return;
+  if (view === "login" || view === "reset-password") return;
+
+  loadNotifications({ silentToasts: true });
+  const t = window.setInterval(() => loadNotifications({ silentToasts: false }), 8000);
+
+  return () => window.clearInterval(t);
+}, [auth, view]);
 
   async function markNotifRead(id) {
     try {
