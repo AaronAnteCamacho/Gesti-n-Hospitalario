@@ -1,10 +1,13 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import "../styles/Bitacora.css";
+import "../styles/TableScrollHint.css";
 import ExportPickerModal from "../components/ExportPickerModal.jsx";
+import TableScrollHint from "../components/TableScrollHint.jsx";
 
 export default function Bitacora({ bitacoras, onNew, onOpen, onDownload }) {
   const [exportOpen, setExportOpen] = useState(false);
   const [exportTarget, setExportTarget] = useState(null);
+  const tableWrapRef = useRef(null);
 
   function openExportModal(bitacora) {
     setExportTarget(bitacora || null);
@@ -32,7 +35,14 @@ export default function Bitacora({ bitacoras, onNew, onOpen, onDownload }) {
         <h2 className="bitacora__title">Bitácoras</h2>
       </div>
 
-      <div className="card bitacora__tableCard">
+      <TableScrollHint
+        targetRef={tableWrapRef}
+        className="tableScrollHint bitacora__scrollHint"
+        text="Desliza para ver más columnas"
+        sticky
+      />
+
+      <div className="card bitacora__tableCard" ref={tableWrapRef}>
         <table>
           <thead>
             <tr>
@@ -80,14 +90,10 @@ export default function Bitacora({ bitacoras, onNew, onOpen, onDownload }) {
       </div>
 
       <ExportPickerModal
-      open={exportOpen}
-      onClose={closeExportModal}
-      title="Descargar bitácora"
-        onPick={(tipo) => {
-          if (!exportTarget) return;
-          onDownload?.(exportTarget, tipo);
-          closeExportModal();
-        }}
+        open={exportOpen}
+        onClose={closeExportModal}
+        title="Descargar bitácora"
+        onPick={handlePick}
       />
     </section>
   );

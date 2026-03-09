@@ -353,3 +353,15 @@
   width: 95px;
   white-space: normal;
 }
+
+.formulario__scrollHint {
+  margin-top: 10px;
+}
+
+.formulario__tableWrap {
+  overflow-x: auto;
+}
+
+.formulario__tableWrap table {
+  min-width: 980px;
+}

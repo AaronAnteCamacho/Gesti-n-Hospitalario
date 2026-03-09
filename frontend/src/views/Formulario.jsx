@@ -1,9 +1,11 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useRef, useState } from 'react'
 import Modal from '../components/Modal.jsx'
 import logoLeft from '../assets/logo_left.png'
 import logoRight from '../assets/logo_right.png'
+import TableScrollHint from '../components/TableScrollHint.jsx'
 
 import '../styles/Formulario.css'
+import '../styles/TableScrollHint.css'
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10)
@@ -34,7 +36,6 @@ export default function Formulario({
   setTerminados,
   toast,
 }) {
-  // fallback si no llega toast
   const t = toast || {
     success: (m) => alert(m),
     error: (m) => alert(m),
@@ -45,13 +46,11 @@ export default function Formulario({
   const [tab, setTab] = useState('pendientes')
   const [q, setQ] = useState('')
 
-  // Modal (crear / editar)
   const [formOpen, setFormOpen] = useState(false)
-  const [formMode, setFormMode] = useState('create') // 'create' | 'edit'
+  const [formMode, setFormMode] = useState('create')
   const [editIndex, setEditIndex] = useState(-1)
+  const tableWrapRef = useRef(null)
 
-  // Cuando creas un formulario desde un pendiente, guardamos la referencia
-  // para poder removerlo de la tabla de pendientes al guardar.
   const [fromPendienteRef, setFromPendienteRef] = useState(null)
 
   const [svc, setSvc] = useState(emptySvc())
@@ -106,7 +105,6 @@ export default function Formulario({
       inv: eq?.numero_inventario || p?.inventario || '',
       inicio: (p?.fecha && String(p.fecha).length >= 8) ? p.fecha : todayISO(),
       falla: fallaTxt || s.falla,
-      // actividades NO se rellena desde pendientes normalmente (se llena al atender)
     }))
 
     setFormOpen(true)
@@ -160,8 +158,6 @@ export default function Formulario({
     if (!svc.equipo?.trim()) return t.error('Falta nombre del equipo')
     if (!svc.inicio?.trim()) return t.error('Falta fecha de inicio')
     if (!svc.tecnico?.trim()) return t.error('Falta técnico responsable')
-
-    // ✅ NUEVO: validación de ambos flujos (Crear desde pendientes / Editar terminados)
     if (!svc.falla?.trim()) return t.error('Falta la falla reportada')
     if (!svc.actividades?.trim()) return t.error('Faltan las actividades realizadas')
 
@@ -216,6 +212,13 @@ export default function Formulario({
         </div>
       </div>
 
+      <TableScrollHint
+        targetRef={tableWrapRef}
+        className="tableScrollHint formulario__scrollHint"
+        text="Desliza para ver más columnas"
+        sticky
+      />
+
       <div className="card formulario__tabsCard">
         <div className="tabs">
           <button
@@ -236,97 +239,97 @@ export default function Formulario({
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar..." />
         </div>
 
-        {tab === 'pendientes' ? (
-          <table>
-            <thead>
-              <tr>
-                <th>No. Serie</th>
-                <th>Nombre</th>
-                <th>Fecha</th>
-                <th>Área</th>
-                <th>Inventario</th>
-                <th>Reportó</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {filteredPendientes?.length ? (
-                filteredPendientes.map((p, idx) => (
-                  <tr key={idx}>
-                    <td>{p.serie}</td>
-                    <td>{p.nombre}</td>
-                    <td>{p.fecha}</td>
-                    <td>{p.area}</td>
-                    <td>{p.inventario}</td>
-                    <td>{p.reporto}</td>
-                    <td>
-                      <div className="formulario__rowActions">
-                        <button className="btn" onClick={() => openCreateFromPendiente(p)}>
-                          Crear formulario
-                        </button>
-                        <button className="nav-btn" onClick={() => openDeletePrompt('pendientes', p)}>
-                          Eliminar
-                        </button>
-                      </div>
+        <div className="formulario__tableWrap" ref={tableWrapRef}>
+          {tab === 'pendientes' ? (
+            <table>
+              <thead>
+                <tr>
+                  <th>No. Serie</th>
+                  <th>Nombre</th>
+                  <th>Fecha</th>
+                  <th>Área</th>
+                  <th>Inventario</th>
+                  <th>Reportó</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredPendientes?.length ? (
+                  filteredPendientes.map((p, idx) => (
+                    <tr key={idx}>
+                      <td>{p.serie}</td>
+                      <td>{p.nombre}</td>
+                      <td>{p.fecha}</td>
+                      <td>{p.area}</td>
+                      <td>{p.inventario}</td>
+                      <td>{p.reporto}</td>
+                      <td>
+                        <div className="formulario__rowActions">
+                          <button className="btn" onClick={() => openCreateFromPendiente(p)}>
+                            Crear formulario
+                          </button>
+                          <button className="nav-btn" onClick={() => openDeletePrompt('pendientes', p)}>
+                            Eliminar
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="small muted">
+                      No hay pendientes.
                     </td>
                   </tr>
-                ))
-              ) : (
+                )}
+              </tbody>
+            </table>
+          ) : (
+            <table>
+              <thead>
                 <tr>
-                  <td colSpan={7} className="small muted">
-                    No hay pendientes.
-                  </td>
+                  <th>No. Serie</th>
+                  <th>Nombre</th>
+                  <th>Fecha término</th>
+                  <th>Área</th>
+                  <th>Inventario</th>
+                  <th>Técnico</th>
+                  <th>Acciones</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>No. Serie</th>
-                <th>Nombre</th>
-                <th>Fecha término</th>
-                <th>Área</th>
-                <th>Inventario</th>
-                <th>Técnico</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {filteredTerminados?.length ? (
-                filteredTerminados.map((t0, idx) => (
-                  <tr key={idx}>
-                    <td>{t0.serie}</td>
-                    <td>{t0.nombre}</td>
-                    <td>{t0.fecha_termino}</td>
-                    <td>{t0.area}</td>
-                    <td>{t0.inventario}</td>
-                    <td>{t0.tecnico}</td>
-                    <td>
-                      <div className="formulario__rowActions">
-                        <button className="btn" onClick={() => openEditTerminado(t0, idx)}>
-                          Editar
-                        </button>
-                        <button className="nav-btn" onClick={() => openDeletePrompt('terminados', t0)}>
-                          Eliminar
-                        </button>
-                      </div>
+              </thead>
+              <tbody>
+                {filteredTerminados?.length ? (
+                  filteredTerminados.map((t0, idx) => (
+                    <tr key={idx}>
+                      <td>{t0.serie}</td>
+                      <td>{t0.nombre}</td>
+                      <td>{t0.fecha_termino}</td>
+                      <td>{t0.area}</td>
+                      <td>{t0.inventario}</td>
+                      <td>{t0.tecnico}</td>
+                      <td>
+                        <div className="formulario__rowActions">
+                          <button className="btn" onClick={() => openEditTerminado(t0, idx)}>
+                            Editar
+                          </button>
+                          <button className="nav-btn" onClick={() => openDeletePrompt('terminados', t0)}>
+                            Eliminar
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="small muted">
+                      No hay terminados.
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={7} className="small muted">
-                    No hay terminados.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        )}
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
 
       <Modal open={formOpen} title="Orden de servicio" onClose={() => setFormOpen(false)}>
@@ -337,13 +340,15 @@ export default function Formulario({
                 <img src={logoLeft} alt="Logo" className="formulario__logoImg" />
               </div>
               <div className="small muted">
-                Hospital de Especialidades<br />
+                Hospital de Especialidades
+                <br />
                 <strong>Dr. Antonio González Guevara</strong>
               </div>
             </div>
 
             <div className="small muted formulario__previewRight">
-              ORDEN DE SERVICIO<br />
+              ORDEN DE SERVICIO
+              <br />
               <strong>{new Date().toLocaleDateString('es-MX')}</strong>
               <div style={{ marginTop: 6 }}>
                 <img src={logoRight} alt="Logo" className="formulario__logoImg" />
