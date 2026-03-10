@@ -1,9 +1,7 @@
-// backend/src/config/db.js
 import sql from "mssql";
 
 let pool = null;
 
-// Exportamos sql para poder usar sql.VarChar, sql.Int, etc. en las rutas
 export { sql };
 
 export async function getPool() {
@@ -16,9 +14,9 @@ export async function getPool() {
     database: process.env.DB_DATABASE,
     port: Number(process.env.DB_PORT || 1433),
     options: {
-      // Importante para evitar el error de certificado en local
-      encrypt: true,
-      trustServerCertificate: true,
+      encrypt: String(process.env.DB_ENCRYPT || "true").toLowerCase() === "true",
+      trustServerCertificate:
+        String(process.env.DB_TRUST_SERVER_CERT || "false").toLowerCase() === "true",
     },
     pool: {
       max: 10,
@@ -29,23 +27,19 @@ export async function getPool() {
     connectionTimeout: 30000,
   };
 
-  // Debug (puedes borrarlo cuando ya funcione)
   console.log("DB cfg:", {
     server: config.server,
     port: config.port,
     database: config.database,
     user: config.user,
+    encrypt: config.options.encrypt,
+    trustServerCertificate: config.options.trustServerCertificate,
   });
 
   try {
     pool = await sql.connect(config);
-
-    // Opcional: prueba rápida de conexión
-    // await pool.request().query("SELECT 1 AS ok");
-
     return pool;
   } catch (err) {
-    // Limpia pool si falló para reintentar bien en la siguiente llamada
     pool = null;
     console.error("Error conectando a SQL Server:", err);
     throw err;
