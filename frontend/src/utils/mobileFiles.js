@@ -19,24 +19,32 @@ export function isNativeMobile() {
   return platform === "android" || platform === "ios";
 }
 
+function downloadInBrowser(uint8, filename, mimeType) {
+  const blob = new Blob([uint8], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.style.display = "none";
+
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
 export async function saveAndShareFile({ buffer, filename, mimeType }) {
   const uint8 = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
 
+  // COMPUTADORA / WEB = SOLO DESCARGA
   if (!isNativeMobile()) {
-    const blob = new Blob([uint8], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    downloadInBrowser(uint8, filename, mimeType);
     return;
   }
 
+  // TELÉFONO / APK = GUARDAR Y COMPARTIR
   const base64Data = uint8ToBase64(uint8);
 
   const result = await Filesystem.writeFile({
