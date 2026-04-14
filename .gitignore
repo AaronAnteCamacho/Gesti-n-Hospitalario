@@ -4,3 +4,5 @@ node_modules/
 
 # Logs
 npm-debug.log*
+frontend/dist
+frontend/android
