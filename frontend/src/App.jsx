@@ -11,7 +11,7 @@ import Formulario from './views/Formulario.jsx'
 import Login from './views/Login.jsx'
 import PerfilUsuarios from "./views/PerfilUsuarios.jsx"
 import Papelera from './views/Papelera.jsx'
-import "./styles/toast.css";
+import "./styles/Toast.css";
 import { apiFetch } from "./services/api.js"
 import logoLeft from './assets/logo_left.png'
 import logoRight from './assets/logo_right.png'
