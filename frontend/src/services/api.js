@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || "https://gestor-hospitalario-api-czgmrgtbshuace6.mexicocentral-01.azurewebsites.net";
+const API_URL = import.meta.env.VITE_API_URL || "https://gestor-hospitalario-api-czgmgrgtbshuace6.mexicocentral-01.azurewebsites.net";
 
 function getToken() {
   // ✅ 1) primero intenta token separado
