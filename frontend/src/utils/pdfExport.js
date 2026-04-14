@@ -296,3 +296,201 @@ export async function exportBitacoraPdf({
     mimeType: "application/pdf",
   });
 }
+
+export async function exportServicioPdf({
+  servicio,
+  fechaTermino,
+  logoLeftUrl,
+  logoRightUrl,
+}) {
+  const doc = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4",
+  });
+
+  const s = servicio || {};
+
+  const toText = (v) => String(v ?? "").trim();
+  const up = (v) => toText(v).toUpperCase();
+
+  const fmtDate = (value) => {
+    const v = toText(value);
+    if (!v) return "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+      const [yy, mm, dd] = v.split("-");
+      return `${dd}/${mm}/${yy}`;
+    }
+    return v;
+  };
+
+  const safeInv = toText(s.inv || s.inventario || "S/N");
+  const fechaBase = fechaTermino || new Date().toISOString().slice(0, 10);
+  const fechaInicio = fmtDate(s.inicio);
+  const fechaFin = fmtDate(fechaBase);
+  const fechaDoc = fmtDate(fechaBase);
+
+  let leftImg = null;
+  let rightImg = null;
+
+  try {
+    [leftImg, rightImg] = await Promise.all([
+      imageUrlToBase64(logoLeftUrl),
+      imageUrlToBase64(logoRightUrl),
+    ]);
+  } catch (e) {
+    console.warn("No se pudieron cargar los logos:", e);
+  }
+
+  doc.setDrawColor(0, 0, 0);
+  doc.setTextColor(0, 0, 0);
+  doc.setLineWidth(0.5);
+
+  const rect = (x, y, w, h) => doc.rect(x, y, w, h);
+
+  const textCenter = (txt, x, y, w, h, opts = {}) => {
+    doc.setFont("helvetica", opts.bold ? "bold" : "normal");
+    doc.setFontSize(opts.size || 9);
+    doc.text(String(txt || ""), x + w / 2, y + h / 2 + 1.3, { align: "center" });
+  };
+
+  const textLeft = (txt, x, y, opts = {}) => {
+    doc.setFont("helvetica", opts.bold ? "bold" : "normal");
+    doc.setFontSize(opts.size || 9);
+    doc.text(String(txt || ""), x, y);
+  };
+
+  const drawPairRow = (y, leftLabel, leftValue, rightLabel, rightValue) => {
+    const x = 12;
+    const h = 10;
+    const w1 = 38;
+    const w2 = 55;
+    const w3 = 46;
+    const w4 = 47;
+
+    rect(x, y, w1, h);
+    rect(x + w1, y, w2, h);
+    rect(x + w1 + w2, y, w3, h);
+    rect(x + w1 + w2 + w3, y, w4, h);
+
+    textLeft(up(leftLabel), x + 2, y + 6.2, { bold: true, size: 8.8 });
+    textLeft(up(leftValue), x + w1 + 2, y + 6.2, { bold: true, size: 8.8 });
+
+    textLeft(up(rightLabel), x + w1 + w2 + 2, y + 6.2, { bold: true, size: 8.8 });
+    textLeft(up(rightValue), x + w1 + w2 + w3 + 2, y + 6.2, { bold: true, size: 8.8 });
+  };
+
+  const drawTopRow = (y) => {
+    const x = 12;
+    const h = 18;
+    const w1 = 38;
+    const w2 = 82;
+    const w3 = 20;
+    const w4 = 46;
+
+    rect(x, y, w1, h);
+    rect(x + w1, y, w2, h);
+    rect(x + w1 + w2, y, w3, h);
+    rect(x + w1 + w2 + w3, y, w4, h);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.text("ÁREA A REALIZAR EL", x + 2, y + 7);
+    doc.text("SERVICIO", x + 2, y + 13);
+
+    textLeft(up(s.area), x + w1 + 2, y + 10.8, { bold: true, size: 9.5 });
+    textCenter("FECHA", x + w1 + w2, y, w3, h, { bold: true, size: 8.8 });
+    textLeft(fechaDoc, x + w1 + w2 + w3 + 2, y + 10.8, { bold: true, size: 9.5 });
+  };
+
+  const drawFullRow = (y, h, label, value, valueX = 62) => {
+    rect(12, y, 186, h);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.text(`${up(label)}:`, 15, y + 6.5);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.2);
+
+    const lines = doc.splitTextToSize(up(value), 198 - valueX - 6);
+    doc.text(lines, valueX, y + 6.5);
+  };
+
+  const drawBottomBoxes = (y) => {
+    const x = 12;
+    const h = 24;
+    const w = 93;
+
+    rect(x, y, w, h);
+    rect(x + w, y, w, h);
+
+    textCenter("NOMBRE DE QUIEN REALIZA EL SERVICIO", x, y + 2, w, 8, {
+      bold: true,
+      size: 8.5,
+    });
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text(up(s.tecnico || ""), x + 4, y + 18);
+
+    textCenter("FIRMA DE CONFORMIDAD CON EL SERVICIO", x + w, y + 2, w, 8, {
+      bold: true,
+      size: 8.2,
+    });
+
+    doc.line(x + w + 10, y + 18, x + w + 83, y + 18);
+  };
+
+  if (leftImg) doc.addImage(leftImg, "PNG", 14, 9, 42, 13);
+  if (rightImg) doc.addImage(rightImg, "PNG", 174, 8, 16, 16);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text("HOSPITAL DE ESPECIALIDADES", 105, 12, { align: "center" });
+  doc.text('"DR. ANTONIO GONZALEZ GUEVARA"', 105, 18, { align: "center" });
+  doc.text("ORDEN DE SERVICIO", 105, 26, { align: "center" });
+
+  let y = 34;
+
+  drawTopRow(y);
+  y += 20;
+
+  rect(12, y, 38, 10);
+  rect(50, y, 148, 10);
+  textLeft("NOMBRE DEL EQUIPO", 14, y + 6.2, { bold: true, size: 8.8 });
+  textLeft(up(s.equipo || s.nombre), 52, y + 6.2, { bold: true, size: 8.8 });
+  y += 12;
+
+  drawPairRow(y, "MARCA", s.marca, "MODELO", s.modelo);
+  y += 12;
+
+  drawPairRow(y, "SERIE", s.serie || "/", "NUMERO DE INVENTARIO", safeInv);
+  y += 12;
+
+  drawPairRow(y, "INICIO", fechaInicio, "TERMINO", fechaFin);
+  y += 12;
+
+  drawFullRow(y, 10, "FALLA REPORTADA", s.falla, 64);
+  y += 12;
+
+  drawFullRow(y, 24, "ACTIVIDADES REALIZADAS", s.actividades, 77);
+  y += 26;
+
+  drawFullRow(y, 10, "REFACCIONES UTILIZADAS", s.refacciones, 78);
+  y += 12;
+
+  drawFullRow(y, 10, "OBSERVACIONES", s.observaciones, 58);
+  y += 12;
+
+  drawBottomBoxes(y);
+
+  const filename = `orden_servicio_${safeInv || "sin_inventario"}_${(fechaTermino || new Date().toISOString().slice(0, 10))}.pdf`;
+
+  const buffer = doc.output("arraybuffer");
+  await saveAndShareFile({
+    buffer,
+    filename,
+    mimeType: "application/pdf",
+  });
+}
