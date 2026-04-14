@@ -1564,7 +1564,7 @@ if (view === "reset-password") {
 </div>
 
           <div style={{ marginTop: 12, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-            <button className="btn" onClick={() => window.print()}>Imprimir</button>
+           
           </div>
         </div>
       )

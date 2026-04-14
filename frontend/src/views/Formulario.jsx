@@ -3,6 +3,7 @@ import Modal from '../components/Modal.jsx'
 import logoLeft from '../assets/logo_left.png'
 import logoRight from '../assets/logo_right.png'
 import TableScrollHint from '../components/TableScrollHint.jsx'
+import { exportServicioPdf } from '../utils/pdfExport.js'
 
 import '../styles/Formulario.css'
 import '../styles/TableScrollHint.css'
@@ -74,6 +75,31 @@ export default function Formulario({
       return blob.includes(s)
     })
   }, [terminados, q])
+
+  async function downloadServicePdf() {
+  try {
+    if (!svc.inv?.trim()) return t.error('Falta No. de inventario')
+    if (!svc.equipo?.trim()) return t.error('Falta nombre del equipo')
+    if (!svc.inicio?.trim()) return t.error('Falta fecha de inicio')
+    if (!svc.tecnico?.trim()) return t.error('Falta técnico responsable')
+    if (!svc.falla?.trim()) return t.error('Falta la falla reportada')
+    if (!svc.actividades?.trim()) return t.error('Faltan las actividades realizadas')
+
+    const fechaActual = todayISO()
+
+    await exportServicioPdf({
+      servicio: svc,
+      fechaTermino: fechaActual,
+      logoLeftUrl: logoLeft,
+      logoRightUrl: logoRight,
+    })
+
+    t.success('PDF generado correctamente.')
+  } catch (err) {
+    console.error(err)
+    t.error('No se pudo generar el PDF de la orden de servicio.')
+  }
+}
 
   function resetService() {
     setSvc(emptySvc())
@@ -421,7 +447,7 @@ export default function Formulario({
           </div>
 
           <div className="formulario__modalActions">
-            <button className="nav-btn" onClick={() => window.print()}>Imprimir</button>
+            <button className="nav-btn" onClick={downloadServicePdf}>Imprimir</button>
             <button className="nav-btn" onClick={resetService}>Limpiar</button>
             <button className="btn" onClick={saveService}>Guardar</button>
           </div>
