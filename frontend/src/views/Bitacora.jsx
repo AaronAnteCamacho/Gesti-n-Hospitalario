@@ -33,6 +33,9 @@ export default function Bitacora({ bitacoras, onNew, onOpen, onDownload }) {
     <section className="card bitacora">
       <div className="bitacora__header">
         <h2 className="bitacora__title">Bitácoras</h2>
+        <p className="small muted">
+          Las bitácoras se eliminan automáticamente después de <b>30 días</b>.
+        </p>
       </div>
 
       <TableScrollHint

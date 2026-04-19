@@ -40,6 +40,20 @@ function strToBoolPair(v) {
 
 // Convención de fecha para el grupo "SIN FECHA"
 const NULL_DATE_TOKEN = "__NULL__";
+const RETENTION_DAYS = 30;
+
+async function purgeExpiredBitacoras(pool) {
+  try {
+    await pool.request().input("retentionDays", sql.Int, RETENTION_DAYS).query(`
+      DELETE FROM dbo.bitacoras
+      WHERE fecha IS NOT NULL
+        AND DATEDIFF(DAY, CAST(fecha AS date), CAST(GETDATE() AS date)) >= @retentionDays;
+    `);
+  } catch (e) {
+    console.error("Error purgando bitácoras vencidas:", e?.message || e);
+    throw e;
+  }
+}
 
 /**
  * POST /api/bitacoras
@@ -133,6 +147,7 @@ router.post("/", requireAuth, allowRoles("jefe", "empleado"), async (req, res) =
 router.get("/", requireAuth, allowRoles("jefe", "empleado"), async (req, res) => {
   try {
     const pool = await getPool();
+    await purgeExpiredBitacoras(pool);
 
     // Importante: agrupamos por SOLO la fecha calendario.
     // Si la columna es datetime/datetime2 y tiene hora, esto evita que cada hora
@@ -193,6 +208,7 @@ router.get("/sheet", requireAuth, allowRoles("jefe", "empleado"), async (req, re
     if (!fechaParam) return res.status(400).json({ ok: false, message: "Falta fecha" });
 
     const pool = await getPool();
+    await purgeExpiredBitacoras(pool);
 
     const isNull = fechaParam === NULL_DATE_TOKEN;
     const fechaSql = isNull ? null : fechaParam;

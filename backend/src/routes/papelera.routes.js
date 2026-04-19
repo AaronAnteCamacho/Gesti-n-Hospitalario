@@ -4,6 +4,50 @@ import { requireAuth, allowRoles } from "../middlewares/auth.js";
 
 const router = Router();
 
+const RETENTION_DAYS = 30;
+
+async function purgeExpiredTrash(pool) {
+  const oldItems = await pool
+    .request()
+    .input("retentionDays", sql.Int, RETENTION_DAYS)
+    .query(`
+      SELECT e.id_equipo
+      FROM dbo.equipos e
+      WHERE e.en_papelera = 1
+        AND e.fecha_papelera IS NOT NULL
+        AND DATEDIFF(DAY, CAST(e.fecha_papelera AS date), CAST(GETDATE() AS date)) >= @retentionDays
+    `);
+
+  const ids = (oldItems.recordset || [])
+    .map((row) => Number(row.id_equipo))
+    .filter(Boolean);
+
+  if (!ids.length) return 0;
+
+  const tx = new sql.Transaction(pool);
+  await tx.begin();
+
+  try {
+    for (const id of ids) {
+      const reqTx = new sql.Request(tx);
+      reqTx.input("id", sql.Int, id);
+      await reqTx.query(`DELETE FROM dbo.notificaciones WHERE id_equipo = @id`);
+      await reqTx.query(`DELETE FROM dbo.bitacoras WHERE id_equipo = @id`);
+      await reqTx.query(`DELETE FROM dbo.formularios_servicio WHERE id_equipo = @id`);
+      await reqTx.query(`DELETE FROM dbo.equipos WHERE id_equipo = @id AND en_papelera = 1`);
+    }
+
+    await tx.commit();
+    return ids.length;
+  } catch (e) {
+    try {
+      await tx.rollback();
+    } catch {}
+    console.error("Error purgando papelera vencida:", e?.message || e);
+    throw e;
+  }
+}
+
 // GET /api/papelera
 // - jefe: ve todo
 // - empleado: ve solo lo que él mandó a papelera
@@ -14,6 +58,7 @@ router.get(
   async (req, res) => {
     try {
       const pool = await getPool();
+      await purgeExpiredTrash(pool);
       const isJefe = req.user?.rol === "jefe";
 
       const q = isJefe
