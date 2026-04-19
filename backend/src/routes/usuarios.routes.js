@@ -300,19 +300,14 @@ router.delete(
   requireAuth,
   allowRoles("jefe"),
   async (req, res) => {
+    const USUARIO_ELIMINADO_ID = 19;
+    let tx;
+
     try {
       const id = Number(req.params.id);
-      const USUARIO_ELIMINADO_ID = 19; // <-- cámbialo por el id real (es el id del usuario eliminado)
 
       if (!id) {
         return res.status(400).json({ ok: false, message: "ID inválido" });
-      }
-
-      if (!USUARIO_ELIMINADO_ID) {
-        return res.status(500).json({
-          ok: false,
-          message: "Falta configurar USUARIO_ELIMINADO_ID",
-        });
       }
 
       if (req.user?.id_usuario === id) {
@@ -330,32 +325,67 @@ router.delete(
       }
 
       const pool = await getPool();
+      tx = new sql.Transaction(pool);
+      await tx.begin();
 
-      await pool.request()
+      const rNotif = await new sql.Request(tx)
         .input("id", sql.Int, id)
         .input("uid", sql.Int, USUARIO_ELIMINADO_ID)
         .query(`
           UPDATE notificaciones
           SET id_usuario_origen = @uid
           WHERE id_usuario_origen = @id;
+        `);
 
-          UPDATE bitacoras
-          SET id_usuario = @uid
-          WHERE id_usuario = @id;
-
+      const rEquipos = await new sql.Request(tx)
+        .input("id", sql.Int, id)
+        .input("uid", sql.Int, USUARIO_ELIMINADO_ID)
+        .query(`
           UPDATE equipos
           SET id_usuario_papelera = @uid
           WHERE id_usuario_papelera = @id;
+        `);
 
+      const rBit = await new sql.Request(tx)
+        .input("id", sql.Int, id)
+        .input("uid", sql.Int, USUARIO_ELIMINADO_ID)
+        .query(`
+          UPDATE bitacoras
+          SET id_usuario = @uid
+          WHERE id_usuario = @id;
+        `);
+
+      console.log("Limpieza usuario:", {
+        id,
+        uid: USUARIO_ELIMINADO_ID,
+        notificaciones: rNotif.rowsAffected?.[0] || 0,
+        equipos: rEquipos.rowsAffected?.[0] || 0,
+        bitacoras: rBit.rowsAffected?.[0] || 0,
+      });
+
+      const rDelete = await new sql.Request(tx)
+        .input("id", sql.Int, id)
+        .query(`
           DELETE FROM usuarios
           WHERE id_usuario = @id;
         `);
+
+      console.log("Usuario eliminado:", {
+        id,
+        eliminados: rDelete.rowsAffected?.[0] || 0,
+      });
+
+      await tx.commit();
 
       return res.json({
         ok: true,
         message: "Usuario eliminado permanentemente",
       });
     } catch (e) {
+      if (tx) {
+        try { await tx.rollback(); } catch {}
+      }
+
       console.error("Error eliminando usuario:", e);
 
       return res.status(500).json({
