@@ -315,7 +315,6 @@ router.delete(
 
       const pool = await getPool();
 
-      // Quitar referencias antes de borrar el usuario
       await pool
         .request()
         .input("id", sql.Int, id)
@@ -327,6 +326,10 @@ router.delete(
           UPDATE bitacoras
           SET id_usuario = NULL
           WHERE id_usuario = @id;
+
+          UPDATE equipos
+          SET id_usuario_papelera = NULL
+          WHERE id_usuario_papelera = @id;
 
           DELETE FROM usuarios
           WHERE id_usuario = @id;
