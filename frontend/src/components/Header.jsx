@@ -3,6 +3,12 @@ import logoLeft from '../assets/logo_left.png'
 import logoRight from '../assets/logo_right.png'
 import avatarJefe from "../assets/Jefe.jpeg";
 import avatarUsuario from "../assets/Empleado.jpeg";
+
+import homeIcon from '../assets/home_icon.png'
+import inventoryIcon from '../assets/inventory_icon.png'
+import logIcon from '../assets/log_icon.png'
+import formIcon from '../assets/form_icon.png'
+
 import '../styles/Header.css'
 
 export default function Header({
@@ -11,13 +17,8 @@ export default function Header({
   auth,
   onTrashClick,
   onAddClick,
-
-  // ✅ ahora onAvatarClick recibe "me" | "users"
   onAvatarClick,
-
-  // ✅ nuevo: cerrar sesión
   onLogout,
-
   notifications = [],
   unreadCount = 0,
   notifOpen = false,
@@ -30,7 +31,6 @@ export default function Header({
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const userWrapRef = useRef(null)
 
-  // cerrar menú al dar click fuera
   useEffect(() => {
     function onDocClick(e) {
       if (!userWrapRef.current) return
@@ -51,16 +51,26 @@ export default function Header({
     </button>
   )
 
+  const MobileShortcut = ({ id, label, imgSrc }) => (
+    <button
+      className={'appHeader__mobileShortcut' + (view === id ? ' active' : '')}
+      onClick={() => setView(id)}
+      title={label}
+      type="button"
+    >
+      <img src={imgSrc} alt={label} className="appHeader__mobileShortcutImg" />
+    </button>
+  )
+
   function handleOpenProfile(tab) {
     setUserMenuOpen(false)
-    onAvatarClick?.(tab) // "me" | "users"
+    onAvatarClick?.(tab)
   }
 
   function handleLogout() {
     setUserMenuOpen(false)
     if (onLogout) return onLogout()
 
-    // fallback por si no mandas onLogout desde App
     try {
       localStorage.removeItem("auth")
       localStorage.removeItem("token")
@@ -80,7 +90,7 @@ export default function Header({
           </div>
         </div>
 
-        {/* Nav */}
+        {/* Nav desktop */}
         <nav className="appHeader__nav">
           <NavBtn id="home" label="Home" />
           <NavBtn id="inventario" label="Inventario" />
@@ -92,7 +102,6 @@ export default function Header({
         <div className="appHeader__right">
           <img src={logoRight} alt="Logo derecho" style={{ height: 44, objectFit: 'contain' }} />
 
-          {/* ✅ Avatar + menú tipo Facebook */}
           <div className="appHeader__userWrap" ref={userWrapRef} onClick={(e) => e.stopPropagation()}>
             <img
               className="hdr-avatar"
@@ -140,7 +149,6 @@ export default function Header({
             )}
           </div>
 
-          {/* Notificaciones */}
           {isJefe && (
             <div className="appHeader__notifWrap" onClick={(e) => e.stopPropagation()}>
               <div
@@ -191,10 +199,7 @@ export default function Header({
             </div>
           )}
 
-          {/* Acciones */}
           <div className="appHeader__group">
-     
-
             <div
               className="appHeader__icon appHeader__actionTrash"
               title="Papelera"
@@ -206,6 +211,16 @@ export default function Header({
               <i className="fa-solid fa-trash-can fa-lg"></i>
             </div>
           </div>
+        </div>
+
+        {/* Nav móvil con imágenes */}
+        <div className="appHeader__mobileNav">
+          <MobileShortcut id="home" label="Home" imgSrc={homeIcon} />
+          <MobileShortcut id="inventario" label="Inventario" imgSrc={inventoryIcon} />
+          <MobileShortcut id="bitacora" label="Bitácora" imgSrc={logIcon} />
+          {isJefe && (
+            <MobileShortcut id="formulario" label="Orden de Servicio" imgSrc={formIcon} />
+          )}
         </div>
       </div>
     </header>

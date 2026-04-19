@@ -143,67 +143,75 @@ export default function App() {
       }),
   }
 
-  function ToastViewport({ scope = 'fixed' }) {
-    // scope: "fixed" (global) | "modal" (dentro del modal)
-    const scopeClass = scope === 'modal' ? 'toast-viewport--modal' : 'toast-viewport--fixed'
+function ToastViewport({ scope = 'fixed' }) {
+  // scope: "fixed" (global) | "modal" (dentro del modal)
+  const scopeClass = scope === 'modal' ? 'toast-viewport--modal' : 'toast-viewport--fixed'
 
-    function closeX(t) {
-      // si era confirmación y cierran con X, resolvemos como "false"
-      if (t.type === 'confirm' && typeof t.onResolve === 'function') {
-        try { t.onResolve(false) } catch {}
-      }
-      closeToast(t.id)
+  function closeX(t) {
+    // si era confirmación y cierran con X, resolvemos como "false"
+    if (t.type === 'confirm' && typeof t.onResolve === 'function') {
+      try { t.onResolve(false) } catch {}
     }
-
-    function action(t, value) {
-      if (typeof t.onResolve === 'function') {
-        try { t.onResolve(value) } catch {}
-      }
-      closeToast(t.id)
-    }
-
-    return (
-      <div className={`toast-viewport top-right ${scopeClass}`} aria-live="polite" aria-relevant="additions">
-        {toasts.map((t) => {
-          const confirmVariantClass =
-            t.type === 'confirm' && t.confirmVariant ? `toast--confirm-${t.confirmVariant}` : ''
-
-          return (
-            <div
-              key={t.id}
-              className={`toast toast--${t.type} ${confirmVariantClass}`}
-              role={t.type === 'error' ? 'alert' : 'status'}
-            >
-              <div className="toast__bar" />
-              <div className="toast__head">
-                <div className="toast__title">{t.title}</div>
-                <button className="toast__close" onClick={() => closeX(t)} aria-label="Cerrar">
-                  ×
-                </button>
-              </div>
-
-              <div className="toast__msg">{t.message}</div>
-
-              {t.type === 'confirm' && Array.isArray(t.actions) && (
-                <div className="toast__actions">
-                  {t.actions.map((a, idx) => (
-                    <button
-                      key={idx}
-                      className={`toast__btn toast__btn--${a.variant || 'ghost'}`}
-                      onClick={() => action(t, a.value)}
-                    >
-                      {a.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </div>
-    )
+    closeToast(t.id)
   }
 
+  function action(t, value) {
+    if (typeof t.onResolve === 'function') {
+      try { t.onResolve(value) } catch {}
+    }
+    closeToast(t.id)
+  }
+
+  return (
+    <div
+      className={`toast-viewport ${scopeClass}`}
+      aria-live="polite"
+      aria-relevant="additions"
+    >
+      {toasts.map((t) => {
+        const confirmVariantClass =
+          t.type === 'confirm' && t.confirmVariant ? `toast--confirm-${t.confirmVariant}` : ''
+
+        return (
+          <div
+            key={t.id}
+            className={`toast toast--${t.type} ${confirmVariantClass}`}
+            role={t.type === 'error' ? 'alert' : 'status'}
+          >
+            <div className="toast__bar" />
+
+            <div className="toast__head">
+              <div className="toast__title">{t.title}</div>
+              <button
+                className="toast__close"
+                onClick={() => closeX(t)}
+                aria-label="Cerrar"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="toast__msg">{t.message}</div>
+
+            {t.type === 'confirm' && Array.isArray(t.actions) && (
+              <div className="toast__actions">
+                {t.actions.map((a, idx) => (
+                  <button
+                    key={idx}
+                    className={`toast__btn toast__btn--${a.variant || 'ghost'}`}
+                    onClick={() => action(t, a.value)}
+                  >
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
   
 
   function openModal(title, body) {
@@ -1463,61 +1471,6 @@ if (view === "reset-password") {
 
   return (
     <>
-      {/*CSS del toast (estilo notificación) */}
-      <style>{`
-        .toast-viewport{
-          width: min(360px, calc(100vw - 24px));
-          display: grid;
-          gap: 10px;
-          padding: 12px;
-          pointer-events: none;
-          z-index: 9999;
-        }
-        .toast-viewport--fixed{
-          position: fixed;
-          top: 10px;
-          right: 10px;
-        }
-        /* Cuando el modal está abierto, lo “anclamos” dentro del modal */
-        .toast-viewport--modal{
-          position: absolute;
-          top: 10px;
-          right: 10px;
-        }
-
-        .toast{
-          pointer-events: auto;
-          border-radius: 3px;
-          background: #fff;
-          box-shadow: 0 10px 26px rgba(0,0,0,.20);
-          overflow: hidden;
-          border: 1px solid rgba(0,0,0,.08);
-          transform-origin: top right;
-          animation: toastIn .12s ease-out;
-        }
-        @keyframes toastIn{
-          from{ transform: translateY(-6px); opacity: 0; }
-          to{ transform: translateY(0); opacity: 1; }
-        }
-        .toast__bar{ height: 10px; }
-        .toast__head{
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 8px 10px 2px;
-          color: #fff;
-        }
-        .toast__title{ font-weight: 700; font-size: 12px; }
-        .toast__msg{ padding: 6px 10px 10px; font-size: 12px; color: #2b2b2b; }
-        .toast__close{
-          border: 0; background: transparent; color: rgba(255,255,255,.9);
-          font-size: 16px; cursor: pointer; line-height: 1;
-        }
-        .toast--success .toast__bar, .toast--success .toast__head{ background: #0b6b43; }
-        .toast--error .toast__bar, .toast--error .toast__head{ background: #c81e1e; }
-        .toast--info .toast__bar, .toast--info .toast__head{ background: #2563eb; }
-      `}</style>
-
       {/* Solo global cuando NO hay ningún modal */}
       {!modal.open && !userCenterOpen && <ToastViewport scope="fixed" />}
 

@@ -39,7 +39,7 @@
   color: rgba(255,255,255,.78);
 }
 
-/* NAV */
+/* NAV desktop */
 .appHeader__nav{
   display:flex;
   gap:10px;
@@ -48,7 +48,7 @@
   align-items:center;
 }
 
-/* Re-skin de tus botones nav-btn sin romper tu sistema */
+/* botones nav normales */
 .appHeader .nav-btn{
   background: rgba(255,255,255,.10);
   border: 1px solid rgba(255,255,255,.18);
@@ -67,14 +67,13 @@
   transform: translateY(1px);
 }
 
-/* Activo */
 .appHeader .nav-btn.active{
   background: rgba(255,255,255,.22);
   border-color: rgba(255,255,255,.38);
   box-shadow: 0 10px 30px rgba(0,0,0,.18);
 }
 
-/* Acciones derecha */
+/* derecha */
 .appHeader__right{
   display:flex;
   align-items:center;
@@ -112,7 +111,6 @@
   border: 2px solid rgba(6,95,70,.85);
 }
 
-/* ✅ Notificaciones (sin número: solo punto y panel) */
 .appHeader__notifWrap{ position: relative; }
 
 .appHeader__dot{
@@ -149,7 +147,10 @@
   padding: 6px 8px 10px;
 }
 
-.appHeader__notifTitle{ font-weight: 800; color: #0f172a; }
+.appHeader__notifTitle{
+  font-weight: 800;
+  color: #0f172a;
+}
 
 .appHeader__notifBtn{
   background: rgba(6,95,70,.10);
@@ -162,11 +163,22 @@
   font-size: 12px;
 }
 
-.appHeader__notifBtn:disabled{ opacity: .45; cursor: not-allowed; }
+.appHeader__notifBtn:disabled{
+  opacity: .45;
+  cursor: not-allowed;
+}
 
-.appHeader__notifEmpty{ padding: 10px 8px 12px; color: #475569; font-size: 13px; }
+.appHeader__notifEmpty{
+  padding: 10px 8px 12px;
+  color: #475569;
+  font-size: 13px;
+}
 
-.appHeader__notifList{ display:flex; flex-direction: column; gap: 8px; }
+.appHeader__notifList{
+  display:flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
 .appHeader__notifItem{
   border: 1px solid rgba(0,0,0,.08);
@@ -175,7 +187,11 @@
   background: #fff;
 }
 
-.appHeader__notifMsg{ font-size: 13px; color: #0f172a; line-height: 1.25; }
+.appHeader__notifMsg{
+  font-size: 13px;
+  color: #0f172a;
+  line-height: 1.25;
+}
 
 .appHeader__notifMeta{
   margin-top: 6px;
@@ -202,25 +218,11 @@
 }
 
 .appHeader__actionPlus{
-  color: #86efac; /* verde claro */
+  color: #86efac;
 }
 
 .appHeader__actionTrash{
-  color: #fecaca; /* rojo claro */
-}
-
-/* Responsive */
-@media (max-width: 980px){
-  .appHeader__bar{
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .appHeader__brand{
-    justify-content: center;
-  }
-  .appHeader__right{
-    justify-content: center;
-  }
+  color: #fecaca;
 }
 
 .hdr-avatar{
@@ -232,7 +234,7 @@
   margin-left: 10px;
 }
 
-/* ===== Menú de usuario (tipo Facebook) ===== */
+/* menú usuario */
 .appHeader__userWrap{
   position: relative;
   display: flex;
@@ -291,10 +293,61 @@
   margin: 6px 4px;
 }
 
-/* ===== HEADER MOBILE (como tu 2da imagen) ===== */
-@media (max-width: 600px){
+/* shortcuts móvil */
+.appHeader__mobileNav{
+  display: none;
+}
 
-  /* el header será “3 filas”: brand / nav / acciones */
+.appHeader__mobileShortcut{
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.10);
+  border-radius: 12px;
+  width: 58px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  cursor: pointer;
+  transition: transform .08s ease, background .15s ease, border-color .15s ease;
+}
+
+.appHeader__mobileShortcut:hover{
+  background: rgba(255,255,255,.16);
+  border-color: rgba(255,255,255,.28);
+}
+
+.appHeader__mobileShortcut.active{
+  background: rgba(255,255,255,.22);
+  border-color: rgba(255,255,255,.38);
+  box-shadow: 0 10px 30px rgba(0,0,0,.18);
+}
+
+.appHeader__mobileShortcutImg{
+  max-width: 34px;
+  max-height: 34px;
+  object-fit: contain;
+  display: block;
+}
+
+/* tablet */
+@media (max-width: 980px){
+  .appHeader__bar{
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .appHeader__brand{
+    justify-content: center;
+  }
+
+  .appHeader__right{
+    justify-content: center;
+  }
+}
+
+/* móvil */
+@media (max-width: 600px){
   .appHeader{
     position: sticky;
     top: 0;
@@ -302,30 +355,29 @@
   }
 
   .appHeader__bar{
-    position: relative; /* para poder poner logoRight en absoluto */
+    position: relative;
     display: grid !important;
     grid-template-columns: 1fr !important;
     grid-template-areas:
       "brand"
-      "nav"
-      "actions";
+      "actions"
+      "mobileNav";
     gap: 10px !important;
     padding: 12px 0 14px !important;
     align-items: center !important;
   }
 
-  /* ===== FILA 1: brand ===== */
   .appHeader__brand{
     grid-area: brand;
     width: 100%;
     justify-content: center !important;
     min-width: 0 !important;
     gap: 10px !important;
-    padding-right: 56px; /* espacio para que no se encime con el logoRight */
+    padding-right: 56px;
   }
 
   .appHeader__brand img{
-    height: 30px !important; /* logoLeft */
+    height: 30px !important;
   }
 
   .appHeader__titles .app-title{
@@ -336,31 +388,14 @@
   }
 
   .appHeader__titles .small{
-    display: none !important; /* quita subtítulo en móvil */
+    display: none !important;
   }
 
-  /* ===== FILA 2: nav ===== */
+  /* esconder nav de texto en móvil */
   .appHeader__nav{
-    grid-area: nav;
-    width: 100%;
-    flex-wrap: nowrap !important;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    justify-content: flex-start !important;
-    gap: 10px !important;
-    padding: 0 6px 6px;
+    display: none !important;
   }
 
-  .appHeader__nav::-webkit-scrollbar{ height: 6px; }
-
-  .appHeader .nav-btn{
-    white-space: nowrap;
-    padding: 8px 12px !important;
-    font-size: 13px !important;
-    border-radius: 12px !important;
-  }
-
-  /* ===== FILA 3: acciones centradas ===== */
   .appHeader__right{
     grid-area: actions;
     width: 100%;
@@ -371,7 +406,6 @@
     flex-wrap: wrap !important;
   }
 
-  /* logoRight arriba a la derecha (no ocupa fila) */
   .appHeader__right > img{
     position: absolute !important;
     top: 10px;
@@ -381,7 +415,6 @@
     opacity: .95;
   }
 
-  /* avatar sin margen extra */
   .hdr-avatar{
     margin-left: 0 !important;
     width: 38px !important;
@@ -398,11 +431,33 @@
     gap: 12px !important;
   }
 
-  /* menús desplegables (avatar/notifs) más centrados en móvil */
+  /* mostrar shortcuts con imágenes */
+  .appHeader__mobileNav{
+    grid-area: mobileNav;
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    width: 100%;
+    padding-top: 2px;
+  }
+
+  .appHeader__mobileShortcut{
+    width: 58px;
+    height: 58px;
+  }
+
+  .appHeader__mobileShortcutImg{
+    max-width: 34px;
+    max-height: 34px;
+  }
+
   .appHeader__userMenu{
     right: 0;
     top: 52px;
   }
+
   .appHeader__notifPanel{
     right: 0;
     top: 52px;
@@ -410,30 +465,24 @@
   }
 }
 
-/* ===== Notificaciones FULL solo en CEL (<= 420px) ===== */
+/* cel pequeño */
 @media (max-width: 420px){
-
-  /* que el header NO recorte dropdowns */
   .appHeader,
   .appHeader__bar{
     overflow: visible !important;
   }
 
-  /* Panel de notificaciones centrado, ancho de celular */
   .appHeader__notifPanel{
-    position: fixed !important;          /* evita que se recorte por el header */
+    position: fixed !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
-
-    top: calc(var(--hdr-h, 0px) + 30px) !important; /* debajo del header */
-    width: min(96vw, 360px) !important;  /* <= 360 aprox */
+    top: calc(var(--hdr-h, 0px) + 30px) !important;
+    width: min(96vw, 360px) !important;
     max-height: 60vh !important;
-
     z-index: 999999 !important;
     overflow: auto !important;
   }
 
-  /* Menú de usuario (opcional) */
   .appHeader__userMenu{
     position: fixed !important;
     left: 50% !important;
@@ -441,5 +490,19 @@
     top: calc(var(--hdr-h, 0px) + 108px) !important;
     width: min(92vw, 340px) !important;
     z-index: 999999 !important;
+  }
+
+  .appHeader__mobileNav{
+    gap: 8px;
+  }
+
+  .appHeader__mobileShortcut{
+    width: 54px;
+    height: 54px;
+  }
+
+  .appHeader__mobileShortcutImg{
+    max-width: 30px;
+    max-height: 30px;
   }
 }

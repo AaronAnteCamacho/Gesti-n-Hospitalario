@@ -1,34 +1,48 @@
-toast-viewport{
-  position: fixed;
-  z-index: 9999;
+.toast-viewport{
+  z-index: 2147483647;
   width: min(360px, calc(100vw - 24px));
   display: grid;
   gap: 10px;
   padding: 12px;
+  pointer-events: none;
 }
 
-.toast-viewport.top-right{ top: 10px; right: 10px; }
-.toast-viewport.top-left{ top: 10px; left: 10px; }
-.toast-viewport.bottom-right{ bottom: 10px; right: 10px; }
-.toast-viewport.bottom-left{ bottom: 10px; left: 10px; }
+/* Toast global */
+.toast-viewport--fixed{
+  position: fixed;
+  top: calc(var(--header-h, 74px) + 12px);
+  right: 12px;
+}
+
+/* Toast dentro del modal: baja y empuja el contenido */
+.toast-viewport--modal{
+  position: sticky;
+  top: 8px;
+  margin-left: auto;
+  margin-bottom: 10px;
+  width: min(360px, 100%);
+}
 
 .toast{
+  pointer-events: auto;
   border-radius: 3px;
   background: #fff;
-  box-shadow: 0 10px 26px rgba(0,0,0,20);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.20);
   overflow: hidden;
   transform-origin: top right;
   animation: toastIn .12s ease-out;
-  border: 1px solid rgba(0,0,0,08);
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 @keyframes toastIn{
-  from{ transform: translateY(-6px); opacity: .0; }
+  from{ transform: translateY(-6px); opacity: 0; }
   to{ transform: translateY(0); opacity: 1; }
 }
 
 /* franja arriba */
-.toast__bar{ height: 10px; }
+.toast__bar{
+  height: 10px;
+}
 
 .toast__head{
   display: flex;
@@ -52,7 +66,7 @@ toast-viewport{
 .toast__close{
   border: 0;
   background: transparent;
-  color: rgba(255,255,255,9);
+  color: rgba(255, 255, 255, 0.90);
   font-size: 16px;
   cursor: pointer;
   line-height: 1;
@@ -60,31 +74,19 @@ toast-viewport{
 
 /* colores base */
 .toast--success .toast__bar,
-.toast--success .toast__head{ background: #0b6b43; } /* verde */
+.toast--success .toast__head{
+  background: #0b6b43;
+}
 
 .toast--error .toast__bar,
-.toast--error .toast__head{ background: #c81e1e; }  /* rojo */
+.toast--error .toast__head{
+  background: #c81e1e;
+}
 
 .toast--info .toast__bar,
-.toast--info .toast__head{ background: #2563eb; }   /* azul */
-
-
-/* ====== TOAST dentro del MODAL (si lo usas) ====== */
-.toast-viewport--modal{
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 2147483647 !important; /* ✅ MÁS ALTO POSIBLE */
+.toast--info .toast__head{
+  background: #2563eb;
 }
-
-/* el global fixed */
-.toast-viewport--fixed{
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  z-index: 2147483647 !important; /* ✅ MÁS ALTO POSIBLE */
-}
-
 
 /* acciones */
 .toast__actions{
@@ -100,7 +102,7 @@ toast-viewport{
   border-radius: 10px;
   padding: 7px 12px;
   cursor: pointer;
-  border: 1px solid rgba(0,0,0,10);
+  border: 1px solid rgba(0, 0, 0, 0.10);
   background: #f3f4f6;
   color: #111827;
 }
@@ -108,55 +110,84 @@ toast-viewport{
 .toast__btn--ghost{
   background: transparent;
   border: none;
-  color: rgba(0,0,0,70);
+  color: rgba(0, 0, 0, 0.70);
 }
 
 .toast__btn--primary{
-  background: #2563eb; /* azul */
-  border-color: rgba(37,99,235,35);
+  background: #2563eb;
+  border-color: rgba(37, 99, 235, 0.35);
   color: #fff;
 }
-.toast__btn--primary:hover{ filter: brightness(1.05); }
 
-.toast, .toast__btn{
+.toast__btn--primary:hover{
+  filter: brightness(1.05);
+}
+
+.toast,
+.toast__btn{
   font-family: inherit;
 }
 
-/* botón rojo explícito (por si alguna vez lo usas) */
+/* botón rojo explícito */
 .toast__btn--danger{
   background: linear-gradient(180deg, #b91c1c, #7f1d1d);
-  border: 1px solid rgba(255,255,255,0.14);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   color: #fff;
 }
+
 .toast__btn--danger:hover{
   filter: brightness(1.05);
 }
 
-/* =========================================================
-   ✅ CONFIRM con variantes
-   - por defecto: primary (azul)
-   - danger: rojo
-   ========================================================= */
+/* confirm */
 .toast--confirm{
-  border: 1px solid rgba(0,0,0,08);
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-/* Por defecto (sin clase extra), usa el azul del primary */
+/* confirm azul por defecto */
 .toast--confirm .toast__bar,
 .toast--confirm .toast__head{
   background: #2563eb;
 }
 
-/* Variante roja */
+/* confirm rojo */
 .toast--confirm-danger .toast__bar,
 .toast--confirm-danger .toast__head{
   background: #c81e1e;
 }
 
-/* En confirm-danger, si el botón principal viene como "primary" lo pintamos rojo */
 .toast--confirm-danger .toast__btn--primary{
   background: linear-gradient(180deg, #b91c1c, #7f1d1d);
-  border: 1px solid rgba(255,255,255,0.14);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   color: #fff;
 }
-.toast--confirm-danger .toast__btn--primary:hover{ filter: brightness(1.05); }
+
+.toast--confirm-danger .toast__btn--primary:hover{
+  filter: brightness(1.05);
+}
+
+@media (max-width: 680px){
+  .toast-viewport{
+    width: min(100%, calc(100vw - 16px));
+    padding: 8px 0 0;
+  }
+
+  .toast-viewport--fixed{
+    top: calc(var(--header-h, 74px) + 8px);
+    right: 8px;
+  }
+
+  .toast-viewport--modal{
+    top: 6px;
+    width: min(100%, calc(100vw - 24px));
+    margin-bottom: 8px;
+  }
+
+  .toast__title{
+    font-size: 12px;
+  }
+
+  .toast__msg{
+    font-size: 12px;
+  }
+}
