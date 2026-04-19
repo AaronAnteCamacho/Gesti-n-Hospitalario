@@ -302,21 +302,45 @@ router.delete(
   async (req, res) => {
     try {
       const id = Number(req.params.id);
-      if (!id) return res.status(400).json({ ok: false, message: "ID inválido" });
+      if (!id) {
+        return res.status(400).json({ ok: false, message: "ID inválido" });
+      }
 
-      // Evitar que el jefe se borre a sí mismo por accidente
       if (req.user?.id_usuario === id) {
-        return res.status(400).json({ ok: false, message: "No puedes borrarte a ti mismo" });
+        return res.status(400).json({
+          ok: false,
+          message: "No puedes borrarte a ti mismo",
+        });
       }
 
       const pool = await getPool();
-      await pool.request().input("id", sql.Int, id).query(`DELETE FROM usuarios WHERE id_usuario=@id`);
-      res.json({ ok: true });
+
+      // Quitar referencias antes de borrar el usuario
+      await pool
+        .request()
+        .input("id", sql.Int, id)
+        .query(`
+          UPDATE notificaciones
+          SET id_usuario_origen = NULL
+          WHERE id_usuario_origen = @id;
+
+          UPDATE bitacoras
+          SET id_usuario = NULL
+          WHERE id_usuario = @id;
+
+          DELETE FROM usuarios
+          WHERE id_usuario = @id;
+        `);
+
+      return res.json({ ok: true });
     } catch (e) {
-      console.error(e);
-      res.status(500).json({ ok: false, message: "Error eliminando usuario" });
+      console.error("Error eliminando usuario:", e);
+
+      return res.status(500).json({
+        ok: false,
+        message: e?.message || "Error eliminando usuario",
+      });
     }
   }
 );
-
 export default router;
