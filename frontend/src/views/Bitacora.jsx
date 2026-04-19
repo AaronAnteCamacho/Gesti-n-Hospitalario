@@ -61,7 +61,7 @@ export default function Bitacora({ bitacoras, onNew, onOpen, onDownload }) {
                   <td>{b.id}</td>
                   <td>{b.nombre}</td>
                   <td>{b.fecha}</td>
-                  <td>{b.items?.length || 0}</td>
+                  <td>{b.itemsCount ?? b.items?.length ?? 0}</td>
                   <td>
                     <div className="bitacora__actions">
                       <button className="nav-btn" onClick={() => onOpen?.(b)}>

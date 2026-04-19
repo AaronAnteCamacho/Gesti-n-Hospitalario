@@ -4,6 +4,24 @@ import { requireAuth, allowRoles } from "../middlewares/auth.js";
 
 const router = Router();
 
+async function crearNotificacion(pool, { tipo, accion, mensaje, id_usuario_origen, id_equipo = null }) {
+  try {
+    await pool
+      .request()
+      .input("tipo", sql.VarChar(30), tipo)
+      .input("accion", sql.VarChar(30), accion)
+      .input("mensaje", sql.VarChar(300), mensaje)
+      .input("id_usuario_origen", sql.Int, id_usuario_origen)
+      .input("id_equipo", sql.Int, id_equipo)
+      .query(`
+        INSERT INTO notificaciones (tipo, accion, mensaje, id_usuario_origen, id_equipo, leida)
+        VALUES (@tipo, @accion, @mensaje, @id_usuario_origen, @id_equipo, 0)
+      `);
+  } catch (e) {
+    console.warn("No se pudo crear notificación:", e?.message || e);
+  }
+}
+
 // UI -> DB (varchar)
 function boolPairToStr(okTrue, okFalse) {
   if (okTrue) return "CORRECTO";
@@ -24,6 +42,90 @@ function strToBoolPair(v) {
 const NULL_DATE_TOKEN = "__NULL__";
 
 /**
+ * POST /api/bitacoras
+ * Crea una fila de bitácora vinculada a un equipo.
+ */
+router.post("/", requireAuth, allowRoles("jefe", "empleado"), async (req, res) => {
+  try {
+    const {
+      id_equipo,
+      fecha,
+      funcionamiento_correcto,
+      funcionamiento_incorrecto,
+      sensores_correcto,
+      sensores_incorrecto,
+      requiere_reparacion_si,
+      requiere_reparacion_no,
+      observaciones,
+    } = req.body || {};
+
+    const idEquipo = Number(id_equipo);
+    if (!idEquipo) return res.status(400).json({ ok: false, message: "Falta id_equipo" });
+
+    const estado_funcionamiento = boolPairToStr(!!funcionamiento_correcto, !!funcionamiento_incorrecto);
+    const sensores = boolPairToStr(!!sensores_correcto, !!sensores_incorrecto);
+
+    let requiere_reparacion = null;
+    if (requiere_reparacion_si) requiere_reparacion = 1;
+    else if (requiere_reparacion_no) requiere_reparacion = 0;
+
+    const fechaFinal = String(fecha || "").trim() || new Date().toISOString().slice(0, 10);
+
+    const pool = await getPool();
+
+    const eq = await pool
+      .request()
+      .input("id_equipo", sql.Int, idEquipo)
+      .query(`
+        SELECT TOP 1 id_equipo, numero_inventario, nombre_equipo
+        FROM dbo.equipos
+        WHERE id_equipo = @id_equipo
+      `);
+
+    const equipo = eq.recordset?.[0];
+    if (!equipo) {
+      return res.status(404).json({ ok: false, message: "El equipo no existe" });
+    }
+
+    const ins = await pool
+      .request()
+      .input("id_equipo", sql.Int, idEquipo)
+      .input("fecha", sql.Date, fechaFinal)
+      .input("estado", sql.VarChar(100), estado_funcionamiento)
+      .input("sens", sql.VarChar(100), sensores)
+      .input("rep", sql.Bit, requiere_reparacion)
+      .input("obs", sql.VarChar(sql.MAX), (observaciones ?? "").toString())
+      .input("id_usuario", sql.Int, req.user?.id_usuario || null)
+      .query(`
+        INSERT INTO dbo.bitacoras
+          (id_equipo, fecha, estado_funcionamiento, sensores, requiere_reparacion, observaciones, id_usuario)
+        OUTPUT INSERTED.id_bitacora
+        VALUES
+          (@id_equipo, @fecha, @estado, @sens, @rep, @obs, @id_usuario)
+      `);
+
+    await crearNotificacion(pool, {
+      tipo: "bitacoras",
+      accion: "agregado",
+      mensaje: `Se reportó falla: ${equipo.numero_inventario} · ${equipo.nombre_equipo} (por ${req.user.nombre})`,
+      id_usuario_origen: req.user.id_usuario,
+      id_equipo: idEquipo,
+    });
+
+    return res.json({
+      ok: true,
+      data: {
+        id_bitacora: ins.recordset?.[0]?.id_bitacora || null,
+        fecha: fechaFinal,
+      },
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ ok: false, message: "Error creando bitácora" });
+  }
+});
+
+/**
  * GET /api/bitacoras
  * Devuelve agrupaciones por fecha (una "bitácora" por fecha).
  * Incluye una sección aparte para fecha NULL.
@@ -32,27 +134,44 @@ router.get("/", requireAuth, allowRoles("jefe", "empleado"), async (req, res) =>
   try {
     const pool = await getPool();
 
+    // Importante: agrupamos por SOLO la fecha calendario.
+    // Si la columna es datetime/datetime2 y tiene hora, esto evita que cada hora
+    // se convierta en una bitácora distinta.
     const r = await pool.request().query(`
       SELECT
-        b.fecha,
+        CAST(b.fecha AS date) AS fecha_agrupada,
         COUNT(*) AS items_count,
         MIN(b.id_bitacora) AS any_id
       FROM dbo.bitacoras b
-      GROUP BY b.fecha
-      ORDER BY b.fecha DESC
+      WHERE b.fecha IS NOT NULL
+      GROUP BY CAST(b.fecha AS date)
+
+      UNION ALL
+
+      SELECT
+        CAST(NULL AS date) AS fecha_agrupada,
+        COUNT(*) AS items_count,
+        MIN(b.id_bitacora) AS any_id
+      FROM dbo.bitacoras b
+      WHERE b.fecha IS NULL
+      HAVING COUNT(*) > 0
+
+      ORDER BY fecha_agrupada DESC
     `);
 
     const withFecha = [];
     const sinFecha = [];
 
     for (const row of r.recordset) {
-      const fecha = row.fecha ? row.fecha.toISOString().slice(0, 10) : null;
+      const rawFecha = row.fecha_agrupada ?? row.fecha ?? null;
+      const fecha = rawFecha ? new Date(rawFecha).toISOString().slice(0, 10) : null;
       const group = {
         id: fecha ?? NULL_DATE_TOKEN,
         nombre: fecha ? `Bitácora ${fecha}` : "Bitácoras sin fecha",
-        fecha: fecha, // string YYYY-MM-DD o null
+        fecha,
         itemsCount: Number(row.items_count || 0),
       };
+
       if (fecha) withFecha.push(group);
       else sinFecha.push(group);
     }
@@ -95,7 +214,7 @@ router.get("/sheet", requireAuth, allowRoles("jefe", "empleado"), async (req, re
         e.ubicacion_especifica
       FROM dbo.bitacoras b
       INNER JOIN dbo.equipos e ON e.id_equipo = b.id_equipo
-      WHERE ${isNull ? "b.fecha IS NULL" : "b.fecha = @fecha"}
+      WHERE ${isNull ? "b.fecha IS NULL" : "CAST(b.fecha AS date) = @fecha"}
       ORDER BY e.numero_inventario ASC;
     `;
 

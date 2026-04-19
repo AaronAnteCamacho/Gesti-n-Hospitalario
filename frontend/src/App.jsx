@@ -40,10 +40,11 @@ export default function App() {
   const [inventario, setInventario] = useState([])
   const [areas, setAreas] = useState([])
   const [categorias, setCategorias] = useState([])
-  const [bitacoras, setBitacoras] = useLocalStorageState('bitacoras', [])
+  const [bitacoras, setBitacoras] = useState([])
   const [formularios, setFormularios] = useLocalStorageState('formularios', [])
   const [pendientes, setPendientes] = useLocalStorageState('pendientes', [])
   const [terminados, setTerminados] = useLocalStorageState('terminados', [])
+  const [bitacoraRefreshKey, setBitacoraRefreshKey] = useState(0)
 
   const [modal, setModal] = useState({
     open: false,
@@ -268,12 +269,46 @@ async function loadCatalogos() {
   }
 }
 
+async function loadBitacoras() {
+  try {
+    const r = await apiFetch("/api/bitacoras");
+    const withFecha = r?.data?.withFecha || [];
+    const sinFecha = r?.data?.sinFecha || [];
+    setBitacoras([...(withFecha || []), ...(sinFecha || [])]);
+  } catch (e) {
+    const msg = String(e?.message || "").toLowerCase();
+
+    if (
+      msg.includes("token inválido") ||
+      msg.includes("token invalido") ||
+      msg.includes("unauthorized") ||
+      msg.includes("401")
+    ) {
+      localStorage.removeItem("auth");
+      localStorage.removeItem("token");
+      setAuth(null);
+      setView("login");
+      return;
+    }
+
+    throw e;
+  }
+}
+
+async function fetchBitacoraSheet(bitacoraLike) {
+  const fechaKey = encodeURIComponent(bitacoraLike?.fecha || bitacoraLike?.id || bitacoraLike || "");
+  if (!fechaKey) throw new Error("Bitácora inválida");
+  const r = await apiFetch(`/api/bitacoras/sheet?fecha=${fechaKey}`);
+  return r?.data || null;
+}
+
  useEffect(() => {
   if (!auth) return;
   if (view === "login" || view === "reset-password") return;
 
   loadInventario().catch((e) => console.error("ERROR loadInventario:", e));
   loadCatalogos().catch((e) => console.error("ERROR loadCatalogos:", e));
+  loadBitacoras().catch((e) => console.error("ERROR loadBitacoras:", e));
 }, [auth, view]);
 
   // ✅ Cerrar panel de notificaciones al clickear fuera
@@ -352,33 +387,6 @@ useEffect(() => {
   }
 
   useEffect(() => {
-    if (bitacoras.length === 0) {
-      setBitacoras([
-        {
-          id: 1,
-          nombre: 'Bitácora Neonatología',
-          fecha: isoDate(),
-          items: [
-            {
-              numero_inventario: '192504',
-              equipo: 'CARRO ROJO CON EQUIPO COMPLETO PARA REANIMACION',
-              marca: 'MEDTRONIC',
-              modelo: 'LIFEPAK 20',
-              numero_serie: '40641114',
-              ubicacion_especifica: 'NEONATOLOGÍA',
-              funcionamiento_correcto: false,
-              funcionamiento_incorrecto: false,
-              sensores_correcto: false,
-              sensores_incorrecto: false,
-              requiere_reparacion_si: false,
-              requiere_reparacion_no: false,
-              observaciones: ''
-            }
-          ]
-        }
-      ])
-    }
-
     if (pendientes.length === 0) {
       setPendientes([
         { serie: 'SN-001', nombre: 'Monitor de signos vitales', fecha: '2025-10-01', area: 'Urgencias', inventario: 'INV-1001', reporto: 'Enfermería' },
@@ -602,41 +610,26 @@ useEffect(() => {
     })
   }
 
-  function addToBitacoras(equipo, falla) {
-    const fecha = isoDate()
-    const item = {
-      numero_inventario: equipo?.numero_inventario,
-      equipo: equipo?.nombre_equipo,
-      marca: equipo?.marca,
-      modelo: equipo?.modelo,
-      numero_serie: equipo?.numero_serie,
-      ubicacion_especifica: equipo?.ubicacion_especifica,
-      funcionamiento_correcto: !!falla.funcionamiento_correcto,
-      funcionamiento_incorrecto: !!falla.funcionamiento_incorrecto,
-      sensores_correcto: !!falla.sensores_correcto,
-      sensores_incorrecto: !!falla.sensores_incorrecto,
-      requiere_reparacion_si: !!falla.requiere_reparacion_si,
-      requiere_reparacion_no: !!falla.requiere_reparacion_no,
-      observaciones: falla.observaciones || '',
-    }
+  async function addToBitacoras(equipo, falla) {
+    const idEquipo = Number(equipo?.id_equipo)
+    if (!idEquipo) throw new Error('El equipo no tiene id_equipo para guardar la bitácora.')
 
-    setBitacoras((prev) => {
-      const list = Array.isArray(prev) ? [...prev] : []
-      const idx = list.findIndex((b) => String(b.fecha) === String(fecha))
-
-      if (idx >= 0) {
-        const b = list[idx]
-        const items = Array.isArray(b.items) ? [...b.items] : []
-        items.push(item)
-        list[idx] = { ...b, items }
-        return list
-      }
-
-      return [
-        { id: Date.now(), nombre: `Bitácora ${fecha}`, fecha, items: [item] },
-        ...list,
-      ]
+    await apiFetch('/api/bitacoras', {
+      method: 'POST',
+      body: JSON.stringify({
+        id_equipo: idEquipo,
+        fecha: isoDate(),
+        funcionamiento_correcto: !!falla.funcionamiento_correcto,
+        funcionamiento_incorrecto: !!falla.funcionamiento_incorrecto,
+        sensores_correcto: !!falla.sensores_correcto,
+        sensores_incorrecto: !!falla.sensores_incorrecto,
+        requiere_reparacion_si: !!falla.requiere_reparacion_si,
+        requiere_reparacion_no: !!falla.requiere_reparacion_no,
+        observaciones: falla.observaciones || '',
+      }),
     })
+
+    await loadBitacoras()
   }
 
 function ReportFallaSheet({ equipo, onCancel, onSave }) {
@@ -940,12 +933,16 @@ function ReportFallaSheet({ equipo, onCancel, onSave }) {
       <ReportFallaSheet
         equipo={eq}
         onCancel={closeModal}
-        onSave={(fallo) => {
-          addToBitacoras(eq, fallo)
-          addToPendientes(eq, fallo)
-          closeModal()
-          setView('bitacora')
-          pushToast('success', 'Falla registrada. Se agregó a Bitácoras y Pendientes.')
+        onSave={async (fallo) => {
+          try {
+            await addToBitacoras(eq, fallo)
+            addToPendientes(eq, fallo)
+            closeModal()
+            setView('bitacora')
+            pushToast('success', 'Falla registrada. Se agregó a Bitácoras y Pendientes.')
+          } catch (e) {
+            pushToast('error', e?.message || 'No se pudo guardar la falla en bitácoras')
+          }
         }}
       />
     ))
@@ -1003,9 +1000,7 @@ function ReportFallaSheet({ equipo, onCancel, onSave }) {
   }
 
   function createNewBitacora() {
-    const nombre = prompt('Nombre de la bitácora:')
-    if (!nombre) return
-    setBitacoras(prev => [{ id: Date.now(), nombre, fecha: isoDate(), items: [] }, ...prev])
+    pushToast('info', 'Las bitácoras se crean automáticamente al reportar fallas.')
   }
 
   function openBitacoraDetail(b) {
@@ -1013,16 +1008,19 @@ function ReportFallaSheet({ equipo, onCancel, onSave }) {
   }
 
   
-function downloadBitacora(b, tipo) {
+async function downloadBitacora(b, tipo) {
   if (!b) return;
 
-  // el modal nuevo manda "pdf" o "excel"
   const t = String(tipo || "").toLowerCase();
-
   if (t !== "pdf" && t !== "excel") return;
 
-  // tu función real que genera el archivo (ya la tienes)
-  downloadBitacoraFile(b, t);
+  try {
+    const fullBitacora = b?.items?.length ? b : await fetchBitacoraSheet(b);
+    if (!fullBitacora) throw new Error('No se pudo cargar la bitácora');
+    downloadBitacoraFile(fullBitacora, t);
+  } catch (e) {
+    pushToast('error', e?.message || 'No se pudo descargar la bitácora')
+  }
 }
 
 
@@ -1307,22 +1305,82 @@ if (view === "reset-password") {
 
   //  Bitácora (vista completa dentro del modal, como en Hospital.zip)
   function BitacoraSheet({ bitacoraId }) {
-      const b = bitacoras.find(x => x.id === bitacoraId)
-      if (!b) return <div>No se encontró la bitácora.</div>
+      const [bitacoraData, setBitacoraData] = useState(null)
+      const [loadingSheet, setLoadingSheet] = useState(true)
+      const [sheetError, setSheetError] = useState('')
+
+      useEffect(() => {
+        let cancelled = false
+
+        async function run() {
+          try {
+            setLoadingSheet(true)
+            setSheetError('')
+            const data = await fetchBitacoraSheet(bitacoraId)
+            if (!cancelled) setBitacoraData(data)
+          } catch (e) {
+            if (!cancelled) setSheetError(e?.message || 'No se pudo cargar la bitácora.')
+          } finally {
+            if (!cancelled) setLoadingSheet(false)
+          }
+        }
+
+        run()
+        return () => {
+          cancelled = true
+        }
+      }, [bitacoraId, bitacoraRefreshKey])
 
       const fmt = (v) => (v === null || v === undefined || String(v).trim() === '' ? '—' : String(v))
 
-      const updateRow = (idx, patch) => {
-        setBitacoras(prev => prev.map(bb => {
-          if (bb.id !== b.id) return bb
-          const items = (bb.items && bb.items.length) ? [...bb.items] : [{}]
-          const nextRow = { ...(items[idx] || {}), ...patch }
-          items[idx] = nextRow
-          return { ...bb, items }
-        }))
+      function changeRow(idx, patch) {
+        setBitacoraData(prev => {
+          if (!prev) return prev
+          const items = Array.isArray(prev.items) ? [...prev.items] : []
+          items[idx] = { ...(items[idx] || {}), ...patch }
+          return { ...prev, items }
+        })
       }
 
-      const rows = (b.items?.length ? b.items : [{}])
+      async function persistRow(idx, patch = {}) {
+        let nextRow = null
+
+        setBitacoraData(prev => {
+          if (!prev) return prev
+          const items = Array.isArray(prev.items) ? [...prev.items] : []
+          nextRow = { ...(items[idx] || {}), ...patch }
+          items[idx] = nextRow
+          return { ...prev, items }
+        })
+
+        if (!nextRow?.id_bitacora) return
+
+        try {
+          await apiFetch('/api/bitacoras/entry', {
+            method: 'PUT',
+            body: JSON.stringify({
+              id_bitacora: nextRow.id_bitacora,
+              funcionamiento_correcto: !!nextRow.funcionamiento_correcto,
+              funcionamiento_incorrecto: !!nextRow.funcionamiento_incorrecto,
+              sensores_correcto: !!nextRow.sensores_correcto,
+              sensores_incorrecto: !!nextRow.sensores_incorrecto,
+              requiere_reparacion_si: !!nextRow.requiere_reparacion_si,
+              requiere_reparacion_no: !!nextRow.requiere_reparacion_no,
+              observaciones: nextRow.observaciones || '',
+            }),
+          })
+        } catch (e) {
+          pushToast('error', e?.message || 'No se pudo actualizar la bitácora')
+        }
+      }
+
+      if (loadingSheet) return <div>Cargando bitácora...</div>
+      if (sheetError) return <div>{sheetError}</div>
+
+      const b = bitacoraData
+      if (!b) return <div>No se encontró la bitácora.</div>
+
+      const rows = (b.items?.length ? b.items : [])
 
       return (
         <div className="bitacora-sheet">
@@ -1346,7 +1404,6 @@ if (view === "reset-password") {
             Fecha: <strong>{fmt(b.fecha)}</strong> · Nº de artículos: <strong>{rows.length}</strong>
           </div>
 
-          {/* ===== DESKTOP ===== */}
 <div className="bitacora-table-wrap bitacora-open-desktop">
   <table className="bitacora-table">
     <thead>
@@ -1379,7 +1436,7 @@ if (view === "reset-password") {
         const name = (suffix) => `${b.id}-${idx}-${suffix}`
 
         return (
-          <tr key={idx}>
+          <tr key={row.id_bitacora || idx}>
             <td>{fmt(row.numero_inventario || row.inventario || row.inv)}</td>
             <td>{fmt(row.equipo || row.nombre_equipo || row.nombre)}</td>
             <td>{fmt(row.marca)}</td>
@@ -1392,7 +1449,7 @@ if (view === "reset-password") {
                 type="radio"
                 name={name('func')}
                 checked={!!row.funcionamiento_correcto}
-                onChange={() => updateRow(idx, { funcionamiento_correcto: true, funcionamiento_incorrecto: false })}
+                onChange={() => persistRow(idx, { funcionamiento_correcto: true, funcionamiento_incorrecto: false })}
               />
             </td>
             <td className="center">
@@ -1400,7 +1457,7 @@ if (view === "reset-password") {
                 type="radio"
                 name={name('func')}
                 checked={!!row.funcionamiento_incorrecto}
-                onChange={() => updateRow(idx, { funcionamiento_correcto: false, funcionamiento_incorrecto: true })}
+                onChange={() => persistRow(idx, { funcionamiento_correcto: false, funcionamiento_incorrecto: true })}
               />
             </td>
 
@@ -1409,7 +1466,7 @@ if (view === "reset-password") {
                 type="radio"
                 name={name('sens')}
                 checked={!!row.sensores_correcto}
-                onChange={() => updateRow(idx, { sensores_correcto: true, sensores_incorrecto: false })}
+                onChange={() => persistRow(idx, { sensores_correcto: true, sensores_incorrecto: false })}
               />
             </td>
             <td className="center">
@@ -1417,7 +1474,7 @@ if (view === "reset-password") {
                 type="radio"
                 name={name('sens')}
                 checked={!!row.sensores_incorrecto}
-                onChange={() => updateRow(idx, { sensores_correcto: false, sensores_incorrecto: true })}
+                onChange={() => persistRow(idx, { sensores_correcto: false, sensores_incorrecto: true })}
               />
             </td>
 
@@ -1426,7 +1483,7 @@ if (view === "reset-password") {
                 type="radio"
                 name={name('rep')}
                 checked={!!row.requiere_reparacion_si}
-                onChange={() => updateRow(idx, { requiere_reparacion_si: true, requiere_reparacion_no: false })}
+                onChange={() => persistRow(idx, { requiere_reparacion_si: true, requiere_reparacion_no: false })}
               />
             </td>
             <td className="center">
@@ -1434,7 +1491,7 @@ if (view === "reset-password") {
                 type="radio"
                 name={name('rep')}
                 checked={!!row.requiere_reparacion_no}
-                onChange={() => updateRow(idx, { requiere_reparacion_si: false, requiere_reparacion_no: true })}
+                onChange={() => persistRow(idx, { requiere_reparacion_si: false, requiere_reparacion_no: true })}
               />
             </td>
 
@@ -1444,7 +1501,8 @@ if (view === "reset-password") {
               <input
                 className="bitacora-obs"
                 value={row.observaciones || ''}
-                onChange={(e) => updateRow(idx, { observaciones: e.target.value })}
+                onChange={(e) => changeRow(idx, { observaciones: e.target.value })}
+                onBlur={() => persistRow(idx)}
                 placeholder="Escribe observaciones..."
               />
             </td>
@@ -1455,14 +1513,13 @@ if (view === "reset-password") {
   </table>
 </div>
 
-{/* ===== MOBILE ===== */}
 <div className="bitacora-open-mobile">
   {rows.map((cur, idx) => {
     const row = cur || {}
     const name = (suffix) => `${b.id}-${idx}-${suffix}`
 
     return (
-      <div className="bitacora-mobile-card" key={idx}>
+      <div className="bitacora-mobile-card" key={row.id_bitacora || idx}>
         <div className="bitacora-mobile-grid">
           <div><span>No. inventario</span><strong>{fmt(row.numero_inventario || row.inventario || row.inv)}</strong></div>
           <div><span>Equipo médico</span><strong>{fmt(row.equipo || row.nombre_equipo || row.nombre)}</strong></div>
@@ -1481,7 +1538,7 @@ if (view === "reset-password") {
                 type="radio"
                 name={name('func-mobile')}
                 checked={!!row.funcionamiento_correcto}
-                onChange={() => updateRow(idx, { funcionamiento_correcto: true, funcionamiento_incorrecto: false })}
+                onChange={() => persistRow(idx, { funcionamiento_correcto: true, funcionamiento_incorrecto: false })}
               />
               <span>Correcto</span>
             </label>
@@ -1491,7 +1548,7 @@ if (view === "reset-password") {
                 type="radio"
                 name={name('func-mobile')}
                 checked={!!row.funcionamiento_incorrecto}
-                onChange={() => updateRow(idx, { funcionamiento_correcto: false, funcionamiento_incorrecto: true })}
+                onChange={() => persistRow(idx, { funcionamiento_correcto: false, funcionamiento_incorrecto: true })}
               />
               <span>Incorrecto</span>
             </label>
@@ -1506,7 +1563,7 @@ if (view === "reset-password") {
                 type="radio"
                 name={name('sens-mobile')}
                 checked={!!row.sensores_correcto}
-                onChange={() => updateRow(idx, { sensores_correcto: true, sensores_incorrecto: false })}
+                onChange={() => persistRow(idx, { sensores_correcto: true, sensores_incorrecto: false })}
               />
               <span>Correcto</span>
             </label>
@@ -1516,7 +1573,7 @@ if (view === "reset-password") {
                 type="radio"
                 name={name('sens-mobile')}
                 checked={!!row.sensores_incorrecto}
-                onChange={() => updateRow(idx, { sensores_correcto: false, sensores_incorrecto: true })}
+                onChange={() => persistRow(idx, { sensores_correcto: false, sensores_incorrecto: true })}
               />
               <span>Incorrecto</span>
             </label>
@@ -1531,7 +1588,7 @@ if (view === "reset-password") {
                 type="radio"
                 name={name('rep-mobile')}
                 checked={!!row.requiere_reparacion_si}
-                onChange={() => updateRow(idx, { requiere_reparacion_si: true, requiere_reparacion_no: false })}
+                onChange={() => persistRow(idx, { requiere_reparacion_si: true, requiere_reparacion_no: false })}
               />
               <span>Sí</span>
             </label>
@@ -1541,7 +1598,7 @@ if (view === "reset-password") {
                 type="radio"
                 name={name('rep-mobile')}
                 checked={!!row.requiere_reparacion_no}
-                onChange={() => updateRow(idx, { requiere_reparacion_si: false, requiere_reparacion_no: true })}
+                onChange={() => persistRow(idx, { requiere_reparacion_si: false, requiere_reparacion_no: true })}
               />
               <span>No</span>
             </label>
@@ -1553,7 +1610,8 @@ if (view === "reset-password") {
           <textarea
             className="bitacora-mobile-textarea"
             value={row.observaciones || ''}
-            onChange={(e) => updateRow(idx, { observaciones: e.target.value })}
+            onChange={(e) => changeRow(idx, { observaciones: e.target.value })}
+            onBlur={() => persistRow(idx)}
             placeholder="Escribe observaciones..."
             rows={4}
           />
@@ -1568,7 +1626,7 @@ if (view === "reset-password") {
           </div>
         </div>
       )
-    }
+  }
 
   return (
     <>
