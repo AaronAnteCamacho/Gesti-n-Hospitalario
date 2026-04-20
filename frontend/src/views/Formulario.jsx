@@ -366,7 +366,7 @@ export default function Formulario({
                 <img src={logoLeft} alt="Logo" className="formulario__logoImg" />
               </div>
               <div className="small muted">
-                Hospital de Especialidades
+                HOSPITAL DE ESPECIALIDADES IMMS BIENESTAR TEPIC 
                 <br />
                 <strong>Dr. Antonio González Guevara</strong>
               </div>

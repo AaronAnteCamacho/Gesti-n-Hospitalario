@@ -476,7 +476,7 @@
     position: fixed !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
-    top: calc(var(--hdr-h, 0px) + 30px) !important;
+    top: calc(var(--hdr-h, 0px) + 22px) !important;
     width: min(96vw, 360px) !important;
     max-height: 60vh !important;
     z-index: 999999 !important;
@@ -487,22 +487,22 @@
     position: fixed !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
-    top: calc(var(--hdr-h, 0px) + 108px) !important;
+    top: calc(var(--hdr-h, 0px) + 86px) !important;
     width: min(92vw, 340px) !important;
     z-index: 999999 !important;
   }
 
   .appHeader__mobileNav{
-    gap: 8px;
+    gap: 6px;
   }
 
   .appHeader__mobileShortcut{
-    width: 54px;
-    height: 54px;
+    width: 46px;
+    height: 46px;
   }
 
   .appHeader__mobileShortcutImg{
-    max-width: 30px;
-    max-height: 30px;
+    max-width: 24px;
+    max-height: 24px;
   }
 }

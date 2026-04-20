@@ -201,7 +201,7 @@ export async function exportBitacoraPdf({
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.text('HOSPITAL DE ESPECIALIDADES "DR. ANTONIO GONZALEZ GUEVARA"', 148, 10, {
+  doc.text('HOSPITAL DE ESPECIALIDADES IMMS BIENESTAR TEPIC "DR. ANTONIO GONZALEZ GUEVARA"', 148, 10, {
     align: "center",
   });
   doc.text("AREA DE MANTENIMIENTO", 148, 15, { align: "center" });
@@ -417,37 +417,44 @@ export async function exportServicioPdf({
     doc.text(lines, valueX, y + 6.5);
   };
 
-  const drawBottomBoxes = (y) => {
-    const x = 12;
-    const h = 24;
-    const w = 93;
+const drawBottomBoxes = (y) => {
+  const x = 12;
+  const h = 24;
+  const w = 93;
 
-    rect(x, y, w, h);
-    rect(x + w, y, w, h);
+  rect(x, y, w, h);
+  rect(x + w, y, w, h);
 
-    textCenter("NOMBRE DE QUIEN REALIZA EL SERVICIO", x, y + 2, w, 8, {
-      bold: true,
-      size: 8.5,
-    });
+  // Títulos de los cuadros
+  textCenter("NOMBRE DE QUIEN REALIZA EL SERVICIO", x, y + 2, w, 8, {
+    bold: true,
+    size: 8.5,
+  });
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.text(up(s.tecnico || ""), x + 4, y + 18);
+  textCenter("FIRMA DE CONFORMIDAD CON EL SERVICIO", x + w, y + 2, w, 8, {
+    bold: true,
+    size: 8.2,
+  });
 
-    textCenter("FIRMA DE CONFORMIDAD CON EL SERVICIO", x + w, y + 2, w, 8, {
-      bold: true,
-      size: 8.2,
-    });
+  // IZQUIERDA: línea arriba y nombre abajo
+  const leftLineY = y + 16;
+  doc.line(x + 10, leftLineY, x + w - 10, leftLineY);
 
-    doc.line(x + w + 10, y + 18, x + w + 83, y + 18);
-  };
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.text(up(s.tecnico || ""), x + w / 2, y + 21, { align: "center" });
+
+  // DERECHA: línea para firma
+  const rightLineY = y + 18;
+  doc.line(x + w + 10, rightLineY, x + w + 83, rightLineY);
+};
 
   if (leftImg) doc.addImage(leftImg, "PNG", 14, 9, 42, 13);
   if (rightImg) doc.addImage(rightImg, "PNG", 174, 8, 16, 16);
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
-  doc.text("HOSPITAL DE ESPECIALIDADES", 105, 12, { align: "center" });
+  doc.text("HOSPITAL DE ESPECIALIDADES IMMS BIENESTAR TEPIC", 105, 12, { align: "center" });
   doc.text('"DR. ANTONIO GONZALEZ GUEVARA"', 105, 18, { align: "center" });
   doc.text("ORDEN DE SERVICIO", 105, 26, { align: "center" });
 
