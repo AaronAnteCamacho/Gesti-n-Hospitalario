@@ -4,6 +4,7 @@ import logoLeft from '../assets/logo_left.png'
 import logoRight from '../assets/logo_right.png'
 import TableScrollHint from '../components/TableScrollHint.jsx'
 import { exportServicioPdf } from '../utils/pdfExport.js'
+import { apiFetch } from "../services/api.js";
 
 import '../styles/Formulario.css'
 import '../styles/TableScrollHint.css'
@@ -32,10 +33,9 @@ function emptySvc() {
 export default function Formulario({
   inventario,
   pendientes,
-  setPendientes,
   terminados,
-  setTerminados,
   toast,
+  onReload,
 }) {
   const t = toast || {
     success: (m) => alert(m),
@@ -55,6 +55,7 @@ export default function Formulario({
   const [fromPendienteRef, setFromPendienteRef] = useState(null)
 
   const [svc, setSvc] = useState(emptySvc())
+  const [currentFormId, setCurrentFormId] = useState(null)
 
   const filteredPendientes = useMemo(() => {
     const s = (q || '').toLowerCase().trim()
@@ -106,6 +107,7 @@ export default function Formulario({
     setEditIndex(-1)
     setFormMode('create')
     setFromPendienteRef(null)
+    setCurrentFormId(null)
   }
 
   function openCreateFromPendiente(p) {
@@ -115,6 +117,7 @@ export default function Formulario({
     setFormMode('create')
     setEditIndex(-1)
     setFromPendienteRef(p)
+    setCurrentFormId(p?.id_formulario || null)
 
     const fallaTxt =
       typeof p?.falla === 'string'
@@ -139,6 +142,7 @@ export default function Formulario({
   function openEditTerminado(t0, idx) {
     setFormMode('edit')
     setEditIndex(idx)
+    setCurrentFormId(t0?.id_formulario || null)
 
     setSvc({
       area: t0?.area || '—',
@@ -159,73 +163,74 @@ export default function Formulario({
   }
 
   async function openDeletePrompt(kind, item) {
-    const ok = await t.confirm('¿Seguro que deseas eliminar este registro?', {
-      title: 'Confirmación',
-      okText: 'Eliminar',
-      cancelText: 'Cancelar',
-      okVariant: 'danger',
-    })
-    if (!ok) return
+  const ok = await t.confirm('¿Seguro que deseas eliminar este registro?', {
+    title: 'Confirmación',
+    okText: 'Eliminar',
+    cancelText: 'Cancelar',
+    okVariant: 'danger',
+  });
+  if (!ok) return;
 
-    if (kind === 'pendientes') {
-      setPendientes((prev) => (prev || []).filter((p) => p !== item))
-      t.success('Pendiente eliminado.')
-      return
+  try {
+    if (!item?.id_formulario) {
+      return t.error('No se encontró el id_formulario');
     }
 
-    if (kind === 'terminados') {
-      setTerminados((prev) => (prev || []).filter((x) => x !== item))
-      t.success('Terminado eliminado.')
-    }
+    await apiFetch(`/api/formularios/${item.id_formulario}`, {
+      method: "DELETE",
+    });
+
+    await onReload?.();
+
+    if (kind === 'pendientes') t.success('Pendiente eliminado.');
+    else t.success('Terminado eliminado.');
+  } catch (e) {
+    t.error(e?.message || 'No se pudo eliminar el registro.');
+  }
+}
+
+  async function saveService() {
+  if (!svc.inv?.trim()) return t.error('Falta No. de inventario')
+  if (!svc.equipo?.trim()) return t.error('Falta nombre del equipo')
+  if (!svc.inicio?.trim()) return t.error('Falta fecha de inicio')
+  if (!svc.tecnico?.trim()) return t.error('Falta técnico responsable')
+  if (!svc.falla?.trim()) return t.error('Falta la falla reportada')
+  if (!svc.actividades?.trim()) return t.error('Faltan las actividades realizadas')
+
+  if (!currentFormId) {
+    return t.error('No se encontró el formulario en la base de datos.')
   }
 
-  function saveService() {
-    if (!svc.inv?.trim()) return t.error('Falta No. de inventario')
-    if (!svc.equipo?.trim()) return t.error('Falta nombre del equipo')
-    if (!svc.inicio?.trim()) return t.error('Falta fecha de inicio')
-    if (!svc.tecnico?.trim()) return t.error('Falta técnico responsable')
-    if (!svc.falla?.trim()) return t.error('Falta la falla reportada')
-    if (!svc.actividades?.trim()) return t.error('Faltan las actividades realizadas')
+  try {
+    await apiFetch(`/api/formularios/${currentFormId}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        area_servicio: svc.area,
+        fecha: svc.inicio,
+        falla_reportada: svc.falla,
+        actividades_realizadas: svc.actividades,
+        refacciones_utilizadas: svc.refacciones,
+        observaciones: svc.observaciones,
+        tecnico: svc.tecnico,
+      }),
+    })
 
-    const registro = {
-      serie: svc.serie?.trim() || 'S/N',
-      nombre: svc.equipo,
-      inicio: svc.inicio,
-      area: svc.area,
-      inventario: svc.inv,
-      marca: svc.marca,
-      modelo: svc.modelo,
-      falla: svc.falla,
-      actividades: svc.actividades,
-      refacciones: svc.refacciones,
-      observaciones: svc.observaciones,
-      tecnico: svc.tecnico,
-      fecha_termino: todayISO(),
-    }
+    await onReload?.()
 
-    if (formMode === 'edit' && editIndex >= 0) {
-      setTerminados((prev) => {
-        const list = [...(prev || [])]
-        list[editIndex] = { ...(list[editIndex] || {}), ...registro }
-        return list
-      })
+    if (formMode === 'edit') {
       t.success('Terminado actualizado.')
-      setFormOpen(false)
-      resetService()
-      return
+    } else {
+      t.success('Formulario guardado en Terminados.')
+      setTab('terminados')
     }
 
-    setTerminados((prev) => [registro, ...(prev || [])])
-
-    if (fromPendienteRef) {
-      setPendientes((prev) => (prev || []).filter((p) => p !== fromPendienteRef))
-    }
-
-    t.success('Formulario guardado en Terminados.')
     setFormOpen(false)
     resetService()
-    setTab('terminados')
+  } catch (e) {
+    console.error(e)
+    t.error(e?.message || 'No se pudo guardar el formulario.')
   }
+}
 
   return (
     <section className="card formulario">

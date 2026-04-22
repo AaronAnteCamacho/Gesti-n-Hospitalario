@@ -6,7 +6,6 @@ import Header from './components/Header.jsx'
 import Modal from './components/Modal.jsx'
 import ProfileModal from './components/ProfileModal.jsx'
 import UsersModal from './components/UsersModal.jsx'
-import { useLocalStorageState } from './components/useLocalStorageState.js'
 import Home from './views/Home.jsx'
 import Inventario from './views/Inventario.jsx'
 import Bitacora from './views/Bitacora.jsx'
@@ -44,9 +43,8 @@ export default function App() {
   const [areas, setAreas] = useState([])
   const [categorias, setCategorias] = useState([])
   const [bitacoras, setBitacoras] = useState([])
-  const [formularios, setFormularios] = useLocalStorageState('formularios', [])
-  const [pendientes, setPendientes] = useLocalStorageState('pendientes', [])
-  const [terminados, setTerminados] = useLocalStorageState('terminados', [])
+  const [pendientes, setPendientes] = useState([])
+  const [terminados, setTerminados] = useState([])
   const [bitacoraRefreshKey, setBitacoraRefreshKey] = useState(0)
 
   const [modal, setModal] = useState({
@@ -305,6 +303,30 @@ async function loadBitacoras() {
     throw e;
   }
 }
+async function loadFormularios() {
+  try {
+    const r = await apiFetch("/api/formularios");
+    setPendientes(r?.data?.pendientes || []);
+    setTerminados(r?.data?.terminados || []);
+  } catch (e) {
+    const msg = String(e?.message || "").toLowerCase();
+
+    if (
+      msg.includes("token inválido") ||
+      msg.includes("token invalido") ||
+      msg.includes("unauthorized") ||
+      msg.includes("401")
+    ) {
+      localStorage.removeItem("auth");
+      localStorage.removeItem("token");
+      setAuth(null);
+      setView("login");
+      return;
+    }
+
+    throw e;
+  }
+}
 
 async function fetchBitacoraSheet(bitacoraLike) {
   const fechaKey = encodeURIComponent(bitacoraLike?.fecha || bitacoraLike?.id || bitacoraLike || "");
@@ -313,14 +335,15 @@ async function fetchBitacoraSheet(bitacoraLike) {
   return r?.data || null;
 }
 
- useEffect(() => {
-  if (!auth) return;
-  if (view === "login" || view === "reset-password") return;
+  useEffect(() => {
+    if (!auth) return;
+    if (view === "login" || view === "reset-password") return;
 
-  loadInventario().catch((e) => console.error("ERROR loadInventario:", e));
-  loadCatalogos().catch((e) => console.error("ERROR loadCatalogos:", e));
-  loadBitacoras().catch((e) => console.error("ERROR loadBitacoras:", e));
-}, [auth, view]);
+    loadInventario().catch((e) => console.error("ERROR loadInventario:", e));
+    loadCatalogos().catch((e) => console.error("ERROR loadCatalogos:", e));
+    loadBitacoras().catch((e) => console.error("ERROR loadBitacoras:", e));
+    loadFormularios().catch((e) => console.error("ERROR loadFormularios:", e));
+  }, [auth, view]);
 
   // ✅ Cerrar panel de notificaciones al clickear fuera
   useEffect(() => {
@@ -397,21 +420,6 @@ useEffect(() => {
     }
   }
 
-  useEffect(() => {
-    if (pendientes.length === 0) {
-      setPendientes([
-        { serie: 'SN-001', nombre: 'Monitor de signos vitales', fecha: '2025-10-01', area: 'Urgencias', inventario: 'INV-1001', reporto: 'Enfermería' },
-        { serie: 'SN-002', nombre: 'Bomba de infusión', fecha: '2025-10-03', area: 'Pediatría', inventario: 'INV-1002', reporto: 'Médico residente' },
-      ])
-    }
-
-    if (terminados.length === 0) {
-      setTerminados([
-        { serie: 'SN-010', nombre: 'Cuna térmica', fecha_termino: '2025-09-28', area: 'Neonatología', inventario: 'INV-2001', tecnico: 'Ing. López' },
-      ])
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   function upsertInventario(existing, opts = {}) {
     const initial = existing || {
@@ -603,23 +611,47 @@ useEffect(() => {
     ))
   }
 
-  function addToPendientes(equipo, falla) {
-    const inv = equipo?.numero_inventario || ''
-    const serie = equipo?.numero_serie || 'S/N'
-    const nombre = equipo?.nombre_equipo || 'Equipo'
-    const area = equipo?.nombre_area || equipo?.id_area || '—'
-    const fecha = isoDate()
-    const reporto = auth?.nombre || auth?.correo || '—'
+  function buildFallaReportada(falla) {
+  const partes = [];
 
-    setPendientes((prev) => {
-      const exists = (prev || []).some((p) => String(p.inventario) === String(inv) && String(p.fecha) === String(fecha))
-      if (exists) return prev
-      return [
-        { serie, nombre, fecha, area, inventario: inv, reporto, falla },
-        ...(prev || []),
-      ]
-    })
-  }
+  partes.push(
+    falla?.funcionamiento_incorrecto
+      ? "Funcionamiento incorrecto"
+      : "Funcionamiento correcto"
+  );
+
+  partes.push(
+    falla?.sensores_incorrecto
+      ? "Sensores incorrectos"
+      : "Sensores correctos"
+  );
+
+  partes.push(
+    falla?.requiere_reparacion_si
+      ? "Requiere reparación"
+      : "No requiere reparación"
+  );
+
+  return partes.join(". ");
+}
+
+async function addToFormularioPendiente(equipo, falla) {
+  const idEquipo = Number(equipo?.id_equipo);
+  if (!idEquipo) throw new Error("El equipo no tiene id_equipo para guardar el formulario.");
+
+  await apiFetch("/api/formularios/pending", {
+    method: "POST",
+    body: JSON.stringify({
+      id_equipo: idEquipo,
+      fecha: isoDate(),
+      area_servicio: equipo?.nombre_area || null,
+      falla_reportada: buildFallaReportada(falla),
+      observaciones: falla?.observaciones || "",
+    }),
+  });
+
+  await loadFormularios();
+}
 
   async function addToBitacoras(equipo, falla) {
     const idEquipo = Number(equipo?.id_equipo)
@@ -947,7 +979,7 @@ function ReportFallaSheet({ equipo, onCancel, onSave }) {
         onSave={async (fallo) => {
           try {
             await addToBitacoras(eq, fallo)
-            addToPendientes(eq, fallo)
+            await addToFormularioPendiente(eq, fallo)
             closeModal()
             setView('bitacora')
             pushToast('success', 'Falla registrada. Se agregó a Bitácoras y Pendientes.')
@@ -1107,10 +1139,9 @@ async function downloadBitacora(b, tipo) {
       <Formulario
         inventario={inventario}
         pendientes={pendientes}
-        setPendientes={setPendientes}
         terminados={terminados}
-        setTerminados={setTerminados}
         toast={toast}
+        onReload={loadFormularios}
       />
     )
   }, [view, auth, inventario, areas, categorias, bitacoras, pendientes, terminados, toast])
