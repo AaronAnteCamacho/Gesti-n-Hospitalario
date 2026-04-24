@@ -20,7 +20,12 @@ import logoRight from './assets/logo_right.png'
 import ResetPasswordView from "./views/ResetPasswordView.jsx";
 
 function isoDate() {
-  return new Date().toISOString().slice(0, 10)
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Mazatlan",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
 }
 
 export default function App() {
@@ -335,17 +340,15 @@ async function fetchBitacoraSheet(bitacoraLike) {
   return r?.data || null;
 }
 
-  useEffect(() => {
-    if (!auth) return;
-    if (view === "login" || view === "reset-password") return;
+ useEffect(() => {
+  if (!auth) return;
+  if (view === "login" || view === "reset-password") return;
 
-    loadInventario().catch((e) => console.error("ERROR loadInventario:", e));
-    loadCatalogos().catch((e) => console.error("ERROR loadCatalogos:", e));
-    loadBitacoras().catch((e) => console.error("ERROR loadBitacoras:", e));
-    loadFormularios().catch((e) => console.error("ERROR loadFormularios:", e));
-  }, [auth, view]);
+  loadInventario().catch((e) => console.error("ERROR loadInventario:", e));
+  loadCatalogos().catch((e) => console.error("ERROR loadCatalogos:", e));
+  loadBitacoras().catch((e) => console.error("ERROR loadBitacoras:", e));
+}, [auth]);
 
-  // ✅ Cerrar panel de notificaciones al clickear fuera
   useEffect(() => {
     function onDocClick() {
       setNotifOpen(false)
@@ -391,16 +394,23 @@ async function fetchBitacoraSheet(bitacoraLike) {
     }
   }
 
-  // ✅ polling (solo jefe)
+  // polling (solo jefe)
 useEffect(() => {
   if (!auth || auth.rol !== "jefe") return;
   if (view === "login" || view === "reset-password") return;
+  if (modal.open) return;
 
   loadNotifications({ silentToasts: true });
-  const t = window.setInterval(() => loadNotifications({ silentToasts: false }), 8000);
+
+  const t = window.setInterval(() => {
+    if (!modal.open) {
+      loadNotifications({ silentToasts: false });
+    }
+  }, 8000);
 
   return () => window.clearInterval(t);
-}, [auth, view]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [auth, view, modal.open]);
 
   async function markNotifRead(id) {
     try {
@@ -1181,27 +1191,38 @@ if (view === "reset-password") {
       const [loadingSheet, setLoadingSheet] = useState(true)
       const [sheetError, setSheetError] = useState('')
 
-      useEffect(() => {
-        let cancelled = false
+useEffect(() => {
+  if (!bitacoraId) return;
 
-        async function run() {
-          try {
-            setLoadingSheet(true)
-            setSheetError('')
-            const data = await fetchBitacoraSheet(bitacoraId)
-            if (!cancelled) setBitacoraData(data)
-          } catch (e) {
-            if (!cancelled) setSheetError(e?.message || 'No se pudo cargar la bitácora.')
-          } finally {
-            if (!cancelled) setLoadingSheet(false)
-          }
-        }
+  let cancelled = false;
 
-        run()
-        return () => {
-          cancelled = true
-        }
-      }, [bitacoraId, bitacoraRefreshKey])
+  async function run() {
+    try {
+      setLoadingSheet(true);
+      setSheetError("");
+
+      const data = await fetchBitacoraSheet(bitacoraId);
+
+      if (!cancelled) {
+        setBitacoraData(data);
+      }
+    } catch (e) {
+      if (!cancelled) {
+        setSheetError(e?.message || "No se pudo cargar la bitácora.");
+      }
+    } finally {
+      if (!cancelled) {
+        setLoadingSheet(false);
+      }
+    }
+  }
+
+  run();
+
+  return () => {
+    cancelled = true;
+  };
+}, [bitacoraId]);
 
       const fmt = (v) => (v === null || v === undefined || String(v).trim() === '' ? '—' : String(v))
 
