@@ -340,13 +340,14 @@ async function fetchBitacoraSheet(bitacoraLike) {
   return r?.data || null;
 }
 
- useEffect(() => {
+useEffect(() => {
   if (!auth) return;
   if (view === "login" || view === "reset-password") return;
 
   loadInventario().catch((e) => console.error("ERROR loadInventario:", e));
   loadCatalogos().catch((e) => console.error("ERROR loadCatalogos:", e));
   loadBitacoras().catch((e) => console.error("ERROR loadBitacoras:", e));
+  loadFormularios().catch((e) => console.error("ERROR loadFormularios:", e));
 }, [auth]);
 
   useEffect(() => {
